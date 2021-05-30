@@ -15,25 +15,25 @@ const io = require("socket.io")(server, {
 app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
-var num=0;
+let num = 0;
 
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket.id}`);
- 
+
   socket.on("join", (data) => {
-    console.log("joined")
+    console.log("joined");
     console.log(data);
-    socket.join(data.no)
-    num=data.no
-    
-    //console.log(num);
+    socket.join(data.no);
+    num = data.no;
+    console.log(num);
   });
-  
-  socket.on("send",(data)=>{
-    console.log(num)
-    socket.to(num).emit("text",data)
-  })
-  
+
+  socket.on("send", (data) => {
+    console.log(num);
+    socket.to(num).emit("text", data);
+    console.log(data);
+  });
+
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });

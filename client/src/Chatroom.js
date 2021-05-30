@@ -1,27 +1,32 @@
-import { React, useState } from "react";
-import { io } from "socket.io-client";
-const socket = io("http://localhost:5000");
-function Chatroom() {
+import { React, useState, useEffect } from "react";
+
+function Chatroom({ socket }) {
   const [msg, setmsg] = useState("");
-  const [recieved, setrecieved] = useState("");
-  let sendmsg = (e) => {
+  const [recieved, setrecieved] = useState([]);
+
+  const sendmsg = (e) => {
     socket.emit("send", { message: msg });
+    setmsg("");
   };
-  socket.on("text", (data) => {
-    console.log("recieved broadcast msg");
-    setrecieved(data);
-    console.log(data.message);
-  });
-  let setmymsg = (e) => {
-    setmsg(e.target.value);
-  };
+
+  const setmymsg = (e) => setmsg(e.target.value);
+
+  useEffect(() => {
+    socket.on("text", (data) => {
+      console.log("recieved broadcast msg");
+      console.log(data.message);
+      setrecieved((prev) => [...prev, data.message]);
+    });
+  }, []);
+
   return (
     <div>
+      <p>Message:</p>
       <input value={msg} onChange={setmymsg}></input>
-      <button type="submit" onClick={sendmsg}>
-        Send
-      </button>
-      <input type="text" val={recieved}></input>
+      <button onClick={sendmsg}>Send</button>
+      {recieved.map((msg, index) => (
+        <p key={index}>{msg}</p>
+      ))}
     </div>
   );
 }
