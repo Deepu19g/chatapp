@@ -49,7 +49,7 @@ function Signup() {
           </Link>
           <Switch>
             <Route path={`/${username}/${roomno}`}>
-              <Chatroom socket={socket.current}></Chatroom>
+              <Chatroom socket={socket.current} username={username}></Chatroom>
             </Route>
           </Switch>
         </Router>

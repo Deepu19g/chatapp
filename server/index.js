@@ -12,11 +12,21 @@ const io = require("socket.io")(server, {
     methods: ["GET", "POST"],
   },
 });
+var corsOptions = {
+  origin: 'http://localhost:3000',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+var cors = require('cors')
+app.use(cors(corsOptions))
 app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 let num = 0;
-
+app.post('/post',(req,res)=>{
+  
+  console.log("reached blur")
+  console.log(req)
+})
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket.id}`);
 
@@ -30,7 +40,7 @@ io.on("connection", (socket) => {
 
   socket.on("send", (data) => {
     console.log(num);
-    socket.to(num).emit("text", data);
+    io.to(num).emit("text", data);
     console.log(data);
   });
 
