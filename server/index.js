@@ -1,9 +1,14 @@
 const express = require("express");
 const app = express();
+const { MongoClient } = require("mongodb");
 /*const http = require('http');
 
 const { Server } = require("socket.io");
 const io = new Server(server);*/
+app.use(express.json());
+const uri =
+  "mongodb+srv://Deepak:mongodb20@cluster0.gdc4p.mongodb.net/sample_airbnb?retryWrites=true&w=majority";
+const client = new MongoClient(uri);
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -13,35 +18,87 @@ const io = require("socket.io")(server, {
   },
 });
 var corsOptions = {
-  origin: 'http://localhost:3000',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}
-var cors = require('cors')
-app.use(cors(corsOptions))
+  origin: "http://localhost:3000",
+  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+  header: {
+    "Content-Type":
+      "application/x-www-form-urlencoded; charset=UTF-8;application/json",
+  },
+};
+var cors = require("cors");
+const { json } = require("express");
+app.use(cors(corsOptions));
+//app.use(express.urlencoded({extended:true}))
+
 app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 let num = 0;
-app.post('/post',(req,res)=>{
-  
-  console.log("reached blur")
-  console.log(req)
-})
+
+let connection = async (itm) => {
+  try {
+    console.log("begore");
+    console.log(itm);
+    await client.connect();
+    const result = await client
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .insertOne(itm);
+  } catch (e) {
+    console.log(e);
+  } finally {
+    client.close();
+  }
+};
+app.post("/post", (req, res) => {
+  console.log("data" + JSON.stringify(req.body));
+  connection(req.body);
+  res.json("good");
+});
+let senddata = async (data1) => {
+  let result = [];
+  try {
+    console.log("dara" + data1);
+    await client.connect();
+    result = await client
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .find(
+        //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
+        {
+          sender: { $eq: data1 },
+        }
+      )
+      .toArray();
+    //console.log(result);
+  } catch (err) {
+    console.log(err);
+  }
+ 
+  return result;
+};
+
+app.post("/data", (req, res) => {
+  senddata(req.body.username).then((data) => {
+    console.log("returned" + JSON.stringify(data));
+    res.send(data);
+  });
+});
+//server recieving a post request
+
 io.on("connection", (socket) => {
-  console.log(`a user connected ${socket.id}`);
+  //console.log(`a user connected ${socket.id}`);
 
   socket.on("join", (data) => {
     console.log("joined");
-    console.log(data);
+
     socket.join(data.no);
     num = data.no;
-    console.log(num);
   });
 
   socket.on("send", (data) => {
-    console.log(num);
+    console.log("reached sendon");
     io.to(num).emit("text", data);
-    console.log(data);
   });
 
   socket.on("disconnect", () => {
