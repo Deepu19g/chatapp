@@ -55,6 +55,7 @@ app.post("/post", (req, res) => {
   connection(req.body);
   res.json("good");
 });
+
 let senddata = async (data1) => {
   let result = [];
   try {
@@ -66,7 +67,7 @@ let senddata = async (data1) => {
       .find(
         //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
         {
-          sender: { $eq: data1 },
+          roomno: { $eq: data1 },
         }
       )
       .toArray();
@@ -74,18 +75,63 @@ let senddata = async (data1) => {
   } catch (err) {
     console.log(err);
   }
- 
+
   return result;
 };
 
 app.post("/data", (req, res) => {
-  senddata(req.body.username).then((data) => {
+  senddata(req.body.roomno).then((data) => {
     console.log("returned" + JSON.stringify(data));
+    res.json(data);
+  });
+});
+
+//server recieving a post request
+
+//user signup
+let signup = async (data, res) => {
+  try {
+    await client.connect();
+    await client
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .insertOne(data);
+
+    res.send("worked");
+  } catch (err) {
+    console.log(err);
+  } finally {
+    client.close();
+  }
+};
+app.post("/signup", (req, res) => {
+  signup(req.body, res);
+});
+
+//login authentication
+let login = async ({ email, password }) => {
+  let result = [];
+  await client.connect();
+  result = await client
+    .db("sample_airbnb")
+    .collection("ListingsAndReviews")
+    .find(
+      //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
+      {
+        email: { $eq: email },
+      }
+    )
+    .toArray();
+  return result;
+};
+app.post("/login", (req, res) => {
+  login(req.body).then((data) => {
+    console.log(data);
     res.send(data);
   });
 });
-//server recieving a post request
 
+//socket stuff
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
 
