@@ -29,7 +29,7 @@ function App() {
             component={PrivateRoute}
           ></Route>
           <Route exact path="/Login" component={Login}></Route>
-          <Route path="*" ><Redirect to="/Login"></Redirect></Route>
+         {/* <Route path="*" ><Redirect to="/Login"></Redirect></Route>*/}
         </Switch>
       </Router>
     </div>

@@ -37,8 +37,7 @@ let num = 0;
 
 let connection = async (itm) => {
   try {
-    console.log("begore");
-    console.log(itm);
+  
     await client.connect();
     const result = await client
       .db("sample_airbnb")
@@ -51,7 +50,7 @@ let connection = async (itm) => {
   }
 };
 app.post("/post", (req, res) => {
-  console.log("data" + JSON.stringify(req.body));
+  
   connection(req.body);
   res.json("good");
 });
@@ -59,7 +58,7 @@ app.post("/post", (req, res) => {
 let senddata = async (data1) => {
   let result = [];
   try {
-    console.log("dara" + data1);
+
     await client.connect();
     result = await client
       .db("sample_airbnb")
@@ -81,7 +80,7 @@ let senddata = async (data1) => {
 
 app.post("/data", (req, res) => {
   senddata(req.body.roomno).then((data) => {
-    console.log("returned" + JSON.stringify(data));
+    
     res.json(data);
   });
 });
@@ -126,7 +125,58 @@ let login = async ({ email, password }) => {
 };
 app.post("/login", (req, res) => {
   login(req.body).then((data) => {
-    console.log(data);
+   
+    res.send(data);
+  });
+});
+
+//setting roomdata
+let roomdata = async (itm) => {
+  try {
+    await client.connect();
+    const result = await client
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .insertOne(itm);
+  } catch (err) {
+    console.log(err);
+  }
+};
+app.post("/roomdata", (req, res) => {
+  roomdata(req.body).then((data) => {
+   
+    res.send(data);
+  });
+});
+
+//fetching recent rooms
+let recents=async({email})=>{
+  console.log("email"+email)
+  try{
+    await client.connect()
+    result = await client
+    .db("sample_airbnb")
+    .collection("ListingsAndReviews")
+    .find(
+      //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
+      {
+        member: { $eq: email },
+      }
+    )
+    .toArray();
+    client.close()
+    return result
+  }catch(er){
+    console.log(er)
+  }
+ 
+ 
+}
+app.post("/recents",(req, res) => {
+  
+  recents(req.body).then((data) => {
+    console.log("barf")
+    console.log(data)
     res.send(data);
   });
 });
@@ -136,14 +186,14 @@ io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
 
   socket.on("join", (data) => {
-    console.log("joined");
+   
 
     socket.join(data.no);
     num = data.no;
   });
 
   socket.on("send", (data) => {
-    console.log("reached sendon");
+   
     io.to(num).emit("text", data);
   });
 

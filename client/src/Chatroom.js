@@ -1,19 +1,19 @@
 import { React, useState, useEffect } from "react";
-import axios from "axios"
-import  "./Chatroom.css";
-function Chatroom({ socket, username, roomno }) {
+import axios from "axios";
+import "./Chatroom.css";
+function Chatroom({ socket, username, roomno, recent }) {
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
-   console.log(socket)
+  console.log(socket);
   const sendmsg = async () => {
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
         sender: username,
         msgs: msg,
-        roomno:roomno,
+        roomno: roomno,
       });
-      socket.emit("send", { msgs: msg, sender: username,roomno:roomno });
+      socket.emit("send", { msgs: msg, sender: username, roomno: roomno });
 
       // console.log(res)
     } catch (e) {
@@ -22,18 +22,21 @@ function Chatroom({ socket, username, roomno }) {
 
     setmsg("");
   };
-let initialdata=async()=>{
-  try {
-    let status= await axios.post("http://localhost:5000/data", {
-     roomno:roomno,
-     username: username,
-   }).then(res=>res.data)
-   console.log(status)
-   setrecieved((prev) => [...prev,...status]);
- } catch (err) {
-   console.log(err);
- }
-}
+  //get previous chats
+  let initialdata = async () => {
+    try {
+      let status = await axios
+        .post("http://localhost:5000/data", {
+          roomno: roomno,
+          username: username,
+        })
+        .then((res) => res.data);
+      console.log(status);
+      setrecieved((prev) => [...prev, ...status]);
+    } catch (err) {
+      console.log(err);
+    }
+  };
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
   useEffect(() => {
@@ -42,8 +45,12 @@ let initialdata=async()=>{
       console.log(data.message);
       setrecieved((prev) => [...prev, data]);
     });
-    initialdata()
   }, []);
+
+
+  useEffect(() => {
+    initialdata();
+  }, [recent]);
   /*let save= async()=>{
      console.log("reaching client blur")
      try{
@@ -67,23 +74,45 @@ let initialdata=async()=>{
     
   }*/
   return (
-    <div id="msgside"  >
-    
-      <div className="d-flex flex-column" >
-       {recieved.map((msg, index) => {
-        console.log(recieved)
-        if(msg.sender===username){
-          console.log("reaching")
-        return <p key={index} style={{alignSelf:"flex-end",backgroundColor:"#931bf5",color:"white",padding:10,borderRadius:8}}>{msg.msgs}</p>;
-        }else{
-          return <p key={index} style={{alignSelf:"flex-start",backgroundColor:"#f3f0f5",padding:10,borderRadius:8}}>{msg.msgs}</p>;
-        }
-      })}
+    <div id="msgside">
+      <div className="d-flex flex-column">
+        {recieved.map((msg, index) => {
+          if (msg.sender === username) {
+            console.log("reaching");
+            return (
+              <p
+                key={index}
+                style={{
+                  alignSelf: "flex-end",
+                  backgroundColor: "#931bf5",
+                  color: "white",
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+              >
+                {msg.msgs}
+              </p>
+            );
+          } else {
+            return (
+              <p
+                key={index}
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: "#f3f0f5",
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+              >
+                {msg.msgs}
+              </p>
+            );
+          }
+        })}
       </div>
-     <div style={{position:"sticky",bottom:10}}>
-      
-      <input value={msg} onChange={setmymsg} id="inpbox"></input>
-      <button onClick={sendmsg}>Send</button>
+      <div style={{ position: "sticky", bottom: 10 }}>
+        <input value={msg} onChange={setmymsg} id="inpbox"></input>
+        <button onClick={sendmsg}>Send</button>
       </div>
     </div>
   );
