@@ -33,7 +33,6 @@ app.use(cors(corsOptions));
 app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
-let num = 0;
 
 let connection = async (itm) => {
   try {
@@ -162,7 +161,7 @@ let recents=async({email})=>{
       {
         member: { $eq: email },
       }
-    )
+    ).sort( {  created_time: -1 })
     .toArray();
     client.close()
     return result
@@ -182,19 +181,21 @@ app.post("/recents",(req, res) => {
 });
 
 //socket stuff
+let roomid=""
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
 
   socket.on("join", (data) => {
-   
-
+   console.log("joined")
+   console.log("data.no"+data.no)
     socket.join(data.no);
-    num = data.no;
+    roomid = data.no;
   });
 
   socket.on("send", (data) => {
-   
-    io.to(num).emit("text", data);
+    console.log("reached send listener")
+    console.log("roomid"+roomid)
+    io.to(roomid).emit("text", data);
   });
 
   socket.on("disconnect", () => {

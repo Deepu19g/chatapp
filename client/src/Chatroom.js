@@ -1,7 +1,7 @@
 import { React, useState, useEffect } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-function Chatroom({ socket, username, roomno, recent }) {
+function Chatroom({ socket, email, recent }) {
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
   console.log(socket);
@@ -9,11 +9,11 @@ function Chatroom({ socket, username, roomno, recent }) {
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
-        sender: username,
+        sender: email,
         msgs: msg,
-        roomno: roomno,
+        roomno: recent,
       });
-      socket.emit("send", { msgs: msg, sender: username, roomno: roomno });
+      socket.emit("send", { msgs: msg, sender: email, roomno: recent });
 
       // console.log(res)
     } catch (e) {
@@ -24,11 +24,13 @@ function Chatroom({ socket, username, roomno, recent }) {
   };
   //get previous chats
   let initialdata = async () => {
+    console.log("initialdata called")
+    console.log(recent)
     try {
       let status = await axios
         .post("http://localhost:5000/data", {
-          roomno: roomno,
-          username: username,
+          roomno: recent,
+          
         })
         .then((res) => res.data);
       console.log(status);
@@ -77,8 +79,8 @@ function Chatroom({ socket, username, roomno, recent }) {
     <div id="msgside">
       <div className="d-flex flex-column">
         {recieved.map((msg, index) => {
-          if (msg.sender === username) {
-            console.log("reaching");
+          if (msg.sender === email) {
+           
             return (
               <p
                 key={index}
