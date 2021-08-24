@@ -23,14 +23,9 @@ function Landing() {
     e.preventDefault();
     console.log("working");
     try {
-      const test = await axios
-        .post("http://localhost:5000/login", {
-          password: password,
-          email: email,
-        })
-        .then((result) => result.data);
+      
 
-      if (test.length === 0) {
+    
         const res = await axios.post("http://localhost:5000/signup", {
           username: username,
           password: password,
@@ -39,9 +34,7 @@ function Landing() {
         console.log("fresh data");
         //getauth(true);
         history.push(`/ChatLanding/${auth}/${email}`);
-      } else {
-        setwarn(true);
-      }
+      
       //setstatus(true)
     } catch (err) {
       console.log(err);

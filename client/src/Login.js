@@ -4,26 +4,27 @@ import { Link, useHistory } from "react-router-dom";
 function Login() {
   const [password, setpassword] = useState("");
   const [email, setemail] = useState("");
-  const [warn, setwarn] = useState(false);
+  const [warn, setwarn] = useState("");
   const [auth,setauth] = useState(true)
   const history = useHistory();
   let logging = async (e) => {
+    
     e.preventDefault();
     try {
-      let arr = await axios
+      let status = await axios
         .post("http://localhost:5000/login", {
           password: password,
           email: email,
         })
         .then((result) => result.data);
-      console.log("state modified");
      
-     if ( arr[0] && arr[0].password === password) {
+     
+     if ( status=="success") {
         
        
         history.push(`/ChatLanding/${auth}/${email}`);
       } else {
-        setwarn(true);
+        setwarn(status);
       }
     } catch (err) {
       console.log(err);
@@ -54,7 +55,7 @@ function Login() {
 
         <button type="submit">Login</button>
       </form>
-      {warn ? <p>Incorrect email or password</p> : ""}
+      {warn!=="" ? <p>{warn}</p> : ""}
     </div>
   );
 }

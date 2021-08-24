@@ -1,21 +1,22 @@
 import { React, useState, useEffect } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-function Chatroom({ socket, email, recent }) {
+function Chatroom({ socket, email, recent2 }) {
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
-  console.log(socket);
+ const [subrecent,setsubrecent] = useState(recent2)
   const sendmsg = async () => {
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
         sender: email,
         msgs: msg,
-        roomno: recent,
+        roomno: recent2,
+        time: new Date().getTime(),
       });
-      socket.emit("send", { msgs: msg, sender: email, roomno: recent });
+      socket.emit("send", { msgs: msg, sender: email, roomno: recent2 });
 
-      // console.log(res)
+
     } catch (e) {
       console.log(e);
     }
@@ -23,36 +24,46 @@ function Chatroom({ socket, email, recent }) {
     setmsg("");
   };
   //get previous chats
-  let initialdata = async () => {
-    console.log("initialdata called")
-    console.log(recent)
-    try {
-      let status = await axios
-        .post("http://localhost:5000/data", {
-          roomno: recent,
-          
-        })
-        .then((res) => res.data);
-      console.log(status);
-      setrecieved((prev) => [...prev, ...status]);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+ 
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
+  
+  console.log(subrecent)
+
   useEffect(() => {
     socket.on("text", (data) => {
       console.log("recieved broadcast msg");
-      console.log(data.message);
-      setrecieved((prev) => [...prev, data]);
+      console.log(data.roomno)
+      console.log(subrecent);
+      if (data.roomno == subrecent) {
+        //console.log("yeah matched")
+        
+        setrecieved((prev) => [...prev, data]);
+      }
     });
+
+    
   }, []);
-
-
-  useEffect(() => {
+    useEffect(() => {
+    setsubrecent(recent2)
+    let initialdata = async () => {
+      //setrecieved([]);
+      console.log("initialdata called")
+      console.log(recent2);
+      try {
+        let status = await axios
+          .post("http://localhost:5000/data", {
+            roomno: recent2,
+          })
+          //.then((res) => res.data);
+       
+        setrecieved(status.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
     initialdata();
-  }, [recent]);
+  }, [recent2]);
   /*let save= async()=>{
      console.log("reaching client blur")
      try{
@@ -80,7 +91,6 @@ function Chatroom({ socket, email, recent }) {
       <div className="d-flex flex-column">
         {recieved.map((msg, index) => {
           if (msg.sender === email) {
-           
             return (
               <p
                 key={index}

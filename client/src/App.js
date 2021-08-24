@@ -24,7 +24,7 @@ function App() {
         <Switch>
           <Route exact path="/" component={Landing}></Route>
           <Route
-            
+            //exact
             path="/ChatLanding/:auth/:email"
             component={PrivateRoute}
           ></Route>

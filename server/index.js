@@ -9,6 +9,7 @@ app.use(express.json());
 const uri =
   "mongodb+srv://Deepak:mongodb20@cluster0.gdc4p.mongodb.net/sample_airbnb?retryWrites=true&w=majority";
 const client = new MongoClient(uri);
+client.connect();
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -34,31 +35,52 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
+let roomarray=[]
 let connection = async (itm) => {
   try {
-  
-    await client.connect();
     const result = await client
       .db("sample_airbnb")
       .collection("ListingsAndReviews")
       .insertOne(itm);
   } catch (e) {
     console.log(e);
-  } finally {
-    client.close();
   }
 };
 app.post("/post", (req, res) => {
-  
   connection(req.body);
   res.json("good");
 });
 
-let senddata = async (data1) => {
-  let result = [];
+//finding lastest chat
+/*let latest=async(data1)=>{
   try {
 
     await client.connect();
+    result = await client
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .find(
+       
+        {
+          roomno: { $eq: data1 },
+            
+        }
+      ).sort({  time: -1 })
+      .toArray();
+    console.log(result);
+  } catch (err) {
+    console.log(err);
+  }
+}
+app.post("/latest",(req, res) => {
+ 
+  
+})*/
+
+//send prev chats
+let senddata = async (data1) => {
+  let result = [];
+  try {
     result = await client
       .db("sample_airbnb")
       .collection("ListingsAndReviews")
@@ -79,7 +101,7 @@ let senddata = async (data1) => {
 
 app.post("/data", (req, res) => {
   senddata(req.body.roomno).then((data) => {
-    
+    //console.log(data)
     res.json(data);
   });
 });
@@ -89,7 +111,6 @@ app.post("/data", (req, res) => {
 //user signup
 let signup = async (data, res) => {
   try {
-    await client.connect();
     await client
       .db("sample_airbnb")
       .collection("ListingsAndReviews")
@@ -98,8 +119,6 @@ let signup = async (data, res) => {
     res.send("worked");
   } catch (err) {
     console.log(err);
-  } finally {
-    client.close();
   }
 };
 app.post("/signup", (req, res) => {
@@ -109,7 +128,7 @@ app.post("/signup", (req, res) => {
 //login authentication
 let login = async ({ email, password }) => {
   let result = [];
-  await client.connect();
+
   result = await client
     .db("sample_airbnb")
     .collection("ListingsAndReviews")
@@ -120,19 +139,27 @@ let login = async ({ email, password }) => {
       }
     )
     .toArray();
-  return result;
+//console.log(result[0])
+if(result[0]!==undefined){
+  if (result[0].password == password) {
+    return "success";
+  } else {
+    return "incorrect username or password";
+  }
+
+}else{
+  return "user not registered"
+}
 };
 app.post("/login", (req, res) => {
-  login(req.body).then((data) => {
-   
-    res.send(data);
+  login(req.body, res).then((data) => {
+    res.json(data);
   });
 });
 
 //setting roomdata
 let roomdata = async (itm) => {
   try {
-    await client.connect();
     const result = await client
       .db("sample_airbnb")
       .collection("ListingsAndReviews")
@@ -143,58 +170,157 @@ let roomdata = async (itm) => {
 };
 app.post("/roomdata", (req, res) => {
   roomdata(req.body).then((data) => {
-   
     res.send(data);
   });
 });
 
-//fetching recent rooms
-let recents=async({email})=>{
-  console.log("email"+email)
-  try{
-    await client.connect()
+//fetching recent rooms and sorting them
+let recents = async ({ email }) => {
+  //console.log("email"+email)
+  try {
     result = await client
-    .db("sample_airbnb")
-    .collection("ListingsAndReviews")
-    .find(
-      //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
-      {
-        member: { $eq: email },
-      }
-    ).sort( {  created_time: -1 })
-    .toArray();
-    client.close()
-    return result
-  }catch(er){
-    console.log(er)
+      .db("sample_airbnb")
+      .collection("ListingsAndReviews")
+      .find(
+        //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
+        {
+          member: { $eq: email },
+        }
+      )
+      .toArray();
+
+    return result;
+  } catch (er) {
+    console.log(er);
   }
- 
- 
-}
-app.post("/recents",(req, res) => {
-  
+};
+//obtaining last chat of each grp and sort  them to a array in descending order of time and send response array back
+let sendata = async (rno, email) => {
+  try {
+    let result = [];
+    //let result=[{time:1},{time:2},{time:3},{time:4},{time:5},{time:6}]
+
+    if (rno) {
+      for (let itm of rno) {
+        const pipeline = [
+          {
+            $match: {
+              roomno: itm.roomno,
+              member: {
+                $exists: false,
+              },
+              time: {
+                $exists: true,
+              },
+            },
+          },
+          {
+            $sort: {
+              time: -1,
+            },
+          },
+          {
+            $limit: 1,
+          },
+        ];
+        let val = await client
+          .db("sample_airbnb")
+          .collection("ListingsAndReviews")
+          .aggregate(pipeline)
+          .toArray();
+        //
+        if(val[0]!=null){
+         result.push(val[0]);
+        }
+      }
+    }
+
+   
+    let swap = (a, b) => {
+      let t = a;
+      a = b;
+      b = t;
+      return [a, b];
+    };
+    let partition = (low, high) => {
+      let pivot = result[high].time; // pivot
+      let i = low - 1; // Index of smaller element and indicates the right position of pivot found so far
+
+      for (let j = low; j <= high - 1; j++) {
+        // If current element is smaller than the pivot
+        if (result[j].time < pivot) {
+          i++; // increment index of smaller element
+          [result[i], result[j]] = swap(result[i], result[j]);
+        }
+      }
+      [result[i + 1], result[high]] = swap(result[i + 1], result[high]);
+
+      return i + 1;
+    };
+
+    let quickSort = async (low, high) => {
+      
+      if (low < high) {
+        /* pi is partitioning index, arr[p] is now 
+    at right place */
+        let pi = partition(low, high);
+
+        // Separately sort elements before
+        // partition and after partition
+        quickSort(low, pi - 1);
+        quickSort(pi + 1, high);
+      }
+    };
+
+    await  quickSort(0, result.length - 1)
+
+    return result;
+  } catch (err) {
+    console.log(err);
+  }
+};
+app.post("/recents", (req, res) => {
   recents(req.body).then((data) => {
-    console.log("barf")
-    console.log(data)
-    res.send(data);
+   
+    if(data.length!=0){
+      for(let ob2 of data){
+       
+        roomarray.push(ob2.roomno)
+      }
+    
+    sendata(data, req.email).then((data) => res.json(data));
+    }else{
+      res.json([])
+    }
+   
   });
 });
 
 //socket stuff
-let roomid=""
+let roomid = "";
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
-
+  
+/*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
+  const changeStream = collection.watch([]);
+  changeStream.on('change', (next) => {
+  console.log(next)
+  //io.to(socket.id).emit("changed");
+  //socket.join(next.fullDocument.roomno)
+  //socket.to().emit("changed")
+  socket.broadcast.to(next.fullDocument.roomno).emit("changed")
+});*/
   socket.on("join", (data) => {
-   console.log("joined")
-   console.log("data.no"+data.no)
+    console.log("joined all")
+    if(data!=={}){
     socket.join(data.no);
     roomid = data.no;
+    }
+    socket.join(roomarray)
   });
 
   socket.on("send", (data) => {
-    console.log("reached send listener")
-    console.log("roomid"+roomid)
+    console.log("reached send call server")
     io.to(roomid).emit("text", data);
   });
 
