@@ -19,12 +19,12 @@ function ChatLanding({ email }) {
   const [val, setval] = useState([]);
   const [recent, setrecent] = useState("");
   const [sortarr, setsortarr] = useState([]);
-  const [refresh,setrefresh] = useState("")
+  const [refresh, setrefresh] = useState("");
   const socket = useRef();
   const history = useHistory();
 
   let submit = async () => {
-    console.log("recent backdoor")
+    console.log("recent backdoor");
     setrecent(roomno);
     const res = await axios.post("http://localhost:5000/roomdata", {
       member: email,
@@ -39,23 +39,19 @@ function ChatLanding({ email }) {
   };
 
   useEffect(() => {
-    
     //func to find rooms associated wuth a user
-    
-    initialfetch()
-    
+
+    initialfetch();
   }, []);
   useEffect(() => {
     socket.current = io("ws://localhost:5000");
     socket.current.on("text", (data) => {
-     
-     initialfetch()
+      initialfetch();
     });
-    
-     socket.current.emit("join", {  });
+
+    socket.current.emit("join", {});
     return () => socket.current.close();
   }, []); //TODO: reinitialize socket on user change
- 
 
   let initialfetch = async () => {
     const res = await axios
@@ -63,18 +59,18 @@ function ChatLanding({ email }) {
         email: email,
       })
       .then((val) => val.data);
-     
+
     setval(res.reverse());
   };
 
   let clickrecents = (e) => {
-    console.log("recent changed")
+    console.log("recent changed");
     setrecent(e.target.innerHTML);
     //socket.current.emit("join", { no: e.target.innerHTML, email: email });
     // history.push(`${url}/${e.target.innerHTML}`);
     //history.push(`/${url}/${e.target.innerHTML}`);
   };
-  
+
   return (
     <div>
       <Container fluid style={{ minHeight: "100vh" }}>
@@ -98,7 +94,7 @@ function ChatLanding({ email }) {
                   <div
                     key={itm._id}
                     style={{ backgroundColor: "orange", margin: 5 }}
-                    onClick={clickrecents}
+                    onClick={(e) => setrecent(e.target.innerHTML)}
                   >
                     {itm.roomno}
                   </div>
@@ -106,15 +102,16 @@ function ChatLanding({ email }) {
               })}
             </Col>
             <Col sm={9}>
-              {recent !== "" && (
-                console.log(recent),
-                <Chatroom
-                  //member={member}
-                  socket={socket.current}
-                  email={email}
-                  recent2={recent}
-                ></Chatroom>
-              )}
+              {recent !== "" &&
+                (console.log(recent),
+                (
+                  <Chatroom
+                    //member={member}
+                    socket={socket.current}
+                    email={email}
+                    recent2={recent}
+                  ></Chatroom>
+                ))}
               {/*<Switch>
                 <Route path={`/${url}/${recent}`}>
                   <Chatroom

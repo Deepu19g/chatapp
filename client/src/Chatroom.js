@@ -4,7 +4,7 @@ import "./Chatroom.css";
 function Chatroom({ socket, email, recent2 }) {
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
- const [subrecent,setsubrecent] = useState(recent2)
+  //const [subrecent,setsubrecent] = useState(recent2)
   const sendmsg = async () => {
     try {
       // console.log("done")
@@ -15,8 +15,6 @@ function Chatroom({ socket, email, recent2 }) {
         time: new Date().getTime(),
       });
       socket.emit("send", { msgs: msg, sender: email, roomno: recent2 });
-
-
     } catch (e) {
       console.log(e);
     }
@@ -24,39 +22,38 @@ function Chatroom({ socket, email, recent2 }) {
     setmsg("");
   };
   //get previous chats
- 
+
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
-  
-  console.log(subrecent)
 
-  useEffect(() => {
+  console.log(recent2);
+  function getsockt() {
     socket.on("text", (data) => {
       console.log("recieved broadcast msg");
-      console.log(data.roomno)
-      console.log(subrecent);
-      if (data.roomno == subrecent) {
+      console.log(data.roomno);
+      console.log(recent2);
+      if (data.roomno == recent2) {
         //console.log("yeah matched")
-        
+
         setrecieved((prev) => [...prev, data]);
       }
     });
-
-    
+  }
+  useEffect(() => {
+    getsockt();
   }, []);
-    useEffect(() => {
-    setsubrecent(recent2)
+  useEffect(() => {
+    //setsubrecent(recent2)
     let initialdata = async () => {
       //setrecieved([]);
-      console.log("initialdata called")
+      console.log("initialdata called");
       console.log(recent2);
       try {
-        let status = await axios
-          .post("http://localhost:5000/data", {
-            roomno: recent2,
-          })
-          //.then((res) => res.data);
-       
+        let status = await axios.post("http://localhost:5000/data", {
+          roomno: recent2,
+        });
+        //.then((res) => res.data);
+
         setrecieved(status.data);
       } catch (err) {
         console.log(err);
