@@ -41,7 +41,7 @@ function Chatroom({ socket, email, recent2 }) {
   }
   useEffect(() => {
     getsockt();
-  }, []);
+  }, [recent2]);
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
