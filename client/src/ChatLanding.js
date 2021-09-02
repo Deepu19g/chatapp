@@ -28,10 +28,12 @@ function ChatLanding({ email }) {
     setrecent(roomno);
     const res = await axios.post("http://localhost:5000/roomdata", {
       member: email,
-      created_time: new Date().getTime(),
+      time: new Date().getTime(),
       roomno: roomno,
     });
-    socket.current.emit("join", { no: roomno, email: email }); //if such a username already exists deal with it later
+    initialfetch();
+    socket.current.emit("join", { no: roomno, email: email });
+    setroomno(" "); //if such a username already exists deal with it later
   };
 
   const roomnochange = (e) => {
@@ -54,13 +56,29 @@ function ChatLanding({ email }) {
   }, []); //TODO: reinitialize socket on user change
 
   let initialfetch = async () => {
-    const res = await axios
-      .post("http://localhost:5000/recents", {
-        email: email,
-      })
+    let jwtoken = localStorage.getItem(`jwt${email}`);
+    let config = {
+      headers: {
+        Authorization: "Bearer" + " " + jwtoken,
+      },
+    };
+    try{
+      const res = await axios
+      .post(
+        "http://localhost:5000/recents",
+        {
+          email: email,
+        },
+        config
+      )
       .then((val) => val.data);
-
+    console.log(res);
     setval(res.reverse());
+    }catch(err){
+      history.goBack()
+    }
+    
+    
   };
 
   let clickrecents = (e) => {
@@ -115,7 +133,7 @@ function ChatLanding({ email }) {
               {/*<Switch>
                 <Route path={`/${url}/${recent}`}>
                   <Chatroom
-                    socket={socket.current}
+                    ={socksocketet.current}
                     email={email}
                     recent={recent}
                   ></Chatroom>

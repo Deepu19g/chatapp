@@ -25,7 +25,7 @@ function App() {
           <Route exact path="/" component={Landing}></Route>
           <Route
             //exact
-            path="/ChatLanding/:auth/:email"
+            path="/ChatLanding/:email"
             component={PrivateRoute}
           ></Route>
           <Route exact path="/Login" component={Login}></Route>

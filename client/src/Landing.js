@@ -31,10 +31,17 @@ function Landing() {
           password: password,
           email: email,
         });
-        console.log("fresh data");
-        //getauth(true);
-        history.push(`/ChatLanding/${auth}/${email}`);
-      
+        console.log(res)
+        if(res.data.msg==undefined){
+          setwarn(false)
+          localStorage.setItem(`jwt${email}`,`${res.data}`)
+          console.log("fresh data");
+          //getauth(true);
+          history.push(`/ChatLanding/${email}`);
+        }
+        else{
+          setwarn(true)
+        }
       //setstatus(true)
     } catch (err) {
       console.log(err);

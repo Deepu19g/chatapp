@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 const { MongoClient } = require("mongodb");
+const jwt=require('jsonwebtoken')
+const auth=require("./Middleware/auth")
+require('dotenv').config()
 /*const http = require('http');
 
 const { Server } = require("socket.io");
@@ -28,6 +31,7 @@ var corsOptions = {
 };
 var cors = require("cors");
 const { json } = require("express");
+const { JsonWebTokenError } = require("jsonwebtoken");
 app.use(cors(corsOptions));
 //app.use(express.urlencoded({extended:true}))
 
@@ -111,12 +115,21 @@ app.post("/data", (req, res) => {
 //user signup
 let signup = async (data, res) => {
   try {
-    await client
+    let result=await client
+    .db("sample_airbnb")
+    .collection("ListingsAndReviews").findOne({email:{ $eq: data.email }})
+    
+    if(result==undefined){
+      await client
       .db("sample_airbnb")
       .collection("ListingsAndReviews")
       .insertOne(data);
-
-    res.send("worked");
+const accToken=jwt.sign(data,process.env.SECRETKEY)
+    res.send(accToken);
+    }else{
+      res.json({msg:"user already exists"})
+    }
+    
   } catch (err) {
     console.log(err);
   }
@@ -202,33 +215,29 @@ let sendata = async (rno, email) => {
 
     if (rno) {
       for (let itm of rno) {
-        const pipeline = [
+        const pipeline =[
           {
-            $match: {
-              roomno: itm.roomno,
-              member: {
-                $exists: false,
-              },
-              time: {
-                $exists: true,
-              },
-            },
-          },
-          {
-            $sort: {
-              time: -1,
-            },
-          },
-          {
-            $limit: 1,
-          },
-        ];
+            '$match': {
+              'roomno': `${itm.roomno}`, 
+              'time': {
+                '$exists': true
+              }
+            }
+          }, {
+            '$sort': {
+              'time': -1
+            }
+          }, {
+            '$limit': 1
+          }
+        ]
         let val = await client
           .db("sample_airbnb")
           .collection("ListingsAndReviews")
           .aggregate(pipeline)
           .toArray();
         //
+        
         if(val[0]!=null){
          result.push(val[0]);
         }
@@ -279,7 +288,7 @@ let sendata = async (rno, email) => {
     console.log(err);
   }
 };
-app.post("/recents", (req, res) => {
+app.post("/recents",auth, (req, res) => {
   recents(req.body).then((data) => {
    
     if(data.length!=0){

@@ -22,7 +22,7 @@ function Login() {
      if ( status=="success") {
         
        
-        history.push(`/ChatLanding/${auth}/${email}`);
+        history.push(`/ChatLanding/${email}`);
       } else {
         setwarn(status);
       }

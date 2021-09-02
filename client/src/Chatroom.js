@@ -1,9 +1,11 @@
-import { React, useState, useEffect } from "react";
+import { React, useState, useEffect,useRef } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-function Chatroom({ socket, email, recent2 }) {
+
+function Chatroom({  socket,email, recent2 }) {
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
+  
   //const [subrecent,setsubrecent] = useState(recent2)
   const sendmsg = async () => {
     try {
@@ -27,21 +29,22 @@ function Chatroom({ socket, email, recent2 }) {
   //console.log(username);
 
   console.log(recent2);
-  function getsockt() {
+  
+  useEffect(() => {
+    
+    //socket.current.emit()
     socket.on("text", (data) => {
       console.log("recieved broadcast msg");
       console.log(data.roomno);
       console.log(recent2);
-      if (data.roomno == recent2) {
+     
         //console.log("yeah matched")
 
         setrecieved((prev) => [...prev, data]);
-      }
+      
     });
-  }
-  useEffect(() => {
-    getsockt();
-  }, [recent2]);
+    
+  }, []);
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
