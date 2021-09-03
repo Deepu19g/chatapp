@@ -127,7 +127,7 @@ let signup = async (data, res) => {
 const accToken=jwt.sign(data,process.env.SECRETKEY)
     res.send(accToken);
     }else{
-      res.json({msg:"user already exists"})
+      res.status(403).json({msg:"user already exists"})
     }
     
   } catch (err) {

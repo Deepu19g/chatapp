@@ -7,7 +7,7 @@ module.exports = function (req,res,next) {
     if(token!=undefined && token!=null){
         try{
             req.decoded=jwt.verify(token,process.env.SECRETKEY)
-
+            console.log(req.decoded)
             next()
         }catch(err){
             console.log("error found")
