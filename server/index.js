@@ -1,18 +1,23 @@
 const express = require("express");
 const app = express();
 const { MongoClient } = require("mongodb");
-const jwt=require('jsonwebtoken')
-const auth=require("./Middleware/auth")
-require('dotenv').config()
+const jwt = require("jsonwebtoken");
+const auth = require("./Middleware/auth");
+const mongoose = require("mongoose");
+const Chat = require("./Models/Chat");
+const User = require("./Models/User");
+const Room = require("./Models/Room");
+const { ObjectId } = require("mongodb");
+require("dotenv").config();
 /*const http = require('http');
 
 const { Server } = require("socket.io");
 const io = new Server(server);*/
 app.use(express.json());
-const uri =
-  "mongodb+srv://Deepak:mongodb20@cluster0.gdc4p.mongodb.net/sample_airbnb?retryWrites=true&w=majority";
-const client = new MongoClient(uri);
-client.connect();
+
+/*const client = new MongoClient(uri);
+client.connect();*/
+mongoose.connect(process.env.URI).then(console.log("connected to db"));
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -32,6 +37,7 @@ var corsOptions = {
 var cors = require("cors");
 const { json } = require("express");
 const { JsonWebTokenError } = require("jsonwebtoken");
+const { match } = require("assert");
 app.use(cors(corsOptions));
 //app.use(express.urlencoded({extended:true}))
 
@@ -39,13 +45,14 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
-let roomarray=[]
+
 let connection = async (itm) => {
   try {
-    const result = await client
-      .db("sample_airbnb")
-      .collection("ListingsAndReviews")
-      .insertOne(itm);
+    let data = await Room.find({ roomno: itm.roomno }).exec();
+    console.log("data" + JSON.stringify(data));
+    itm.members = data[0].members;
+    const chat = new Chat(itm);
+    await chat.save();
   } catch (e) {
     console.log(e);
   }
@@ -85,16 +92,12 @@ app.post("/latest",(req, res) => {
 let senddata = async (data1) => {
   let result = [];
   try {
-    result = await client
-      .db("sample_airbnb")
-      .collection("ListingsAndReviews")
-      .find(
-        //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
-        {
-          roomno: { $eq: data1 },
-        }
-      )
-      .toArray();
+    result = await Chat.find(
+      //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
+      {
+        roomno: { $eq: data1 },
+      }
+    );
     //console.log(result);
   } catch (err) {
     console.log(err);
@@ -115,21 +118,21 @@ app.post("/data", (req, res) => {
 //user signup
 let signup = async (data, res) => {
   try {
-    let result=await client
+    /*let result=await client
     .db("sample_airbnb")
-    .collection("ListingsAndReviews").findOne({email:{ $eq: data.email }})
-    
-    if(result==undefined){
-      await client
-      .db("sample_airbnb")
-      .collection("ListingsAndReviews")
-      .insertOne(data);
-const accToken=jwt.sign(data,process.env.SECRETKEY)
-    res.send(accToken);
-    }else{
-      res.status(403).json({msg:"user already exists"})
+    .collection("ListingsAndReviews").findOne({email:{ $eq: data.email }})*/
+
+    let result = await User.find({ email: { $eq: data.email } }).exec();
+
+    if (result.length == 0) {
+      const user = new User(data);
+      await user.save();
+
+      const accToken = jwt.sign(data, process.env.SECRETKEY);
+      res.send(accToken);
+    } else {
+      res.status(403).json({ msg: "user already exists" });
     }
-    
   } catch (err) {
     console.log(err);
   }
@@ -141,28 +144,20 @@ app.post("/signup", (req, res) => {
 //login authentication
 let login = async ({ email, password }) => {
   let result = [];
+  //console.log("reached login")
+  result = await User.find({
+    email: { $eq: email },
+  });
 
-  result = await client
-    .db("sample_airbnb")
-    .collection("ListingsAndReviews")
-    .find(
-      //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
-      {
-        email: { $eq: email },
-      }
-    )
-    .toArray();
-//console.log(result[0])
-if(result[0]!==undefined){
-  if (result[0].password == password) {
-    return "success";
+  if (result[0] !== undefined) {
+    if (result[0].password == password) {
+      return "success";
+    } else {
+      return "incorrect username or password";
+    }
   } else {
-    return "incorrect username or password";
+    return "user not registered";
   }
-
-}else{
-  return "user not registered"
-}
 };
 app.post("/login", (req, res) => {
   login(req.body, res).then((data) => {
@@ -173,10 +168,25 @@ app.post("/login", (req, res) => {
 //setting roomdata
 let roomdata = async (itm) => {
   try {
-    const result = await client
-      .db("sample_airbnb")
-      .collection("ListingsAndReviews")
-      .insertOne(itm);
+    let user = await User.find({ email: { $eq: itm.members } });
+
+    itm.members = user[0].email;
+
+    let temp = await Room.find({ roomno: { $eq: itm.roomno } });
+    let room = {};
+
+    if (temp.length != 0) {
+      if (temp[0].members.includes(itm.members) == false) {
+        temp[0].members = [...temp[0].members, itm.members];
+        await temp[0].save();
+      }
+      //itm._id=temp[0]._id
+    } else {
+      room = new Room(itm);
+      await room.save();
+    }
+
+    /**/
   } catch (err) {
     console.log(err);
   }
@@ -191,60 +201,74 @@ app.post("/roomdata", (req, res) => {
 let recents = async ({ email }) => {
   //console.log("email"+email)
   try {
-    result = await client
-      .db("sample_airbnb")
-      .collection("ListingsAndReviews")
-      .find(
-        //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
-        {
-          member: { $eq: email },
+    let user=await User.find({email:email})
+    result = await Chat.aggregate([
+      {
+        '$match': {
+          '$expr': {
+            '$in': [
+              `${email}`, '$members'
+            ]
+          }
         }
-      )
-      .toArray();
+      }, {
+        '$group': {
+          '_id': '$roomno', 
+          'lastchat': {
+            '$max': '$time'
+          }
+        }
+      }
+    ])
 
-    return result;
+    console.log("res");
+    console.log(result);
+    return result
+    //console.log(result[1].msgs);
+    //return result;
   } catch (er) {
     console.log(er);
   }
 };
 //obtaining last chat of each grp and sort  them to a array in descending order of time and send response array back
-let sendata = async (rno, email) => {
+/*let sendata = async (rno, email) => {
   try {
     let result = [];
     //let result=[{time:1},{time:2},{time:3},{time:4},{time:5},{time:6}]
 
     if (rno) {
       for (let itm of rno) {
-        const pipeline =[
+        const pipeline = [
           {
-            '$match': {
-              'roomno': `${itm.roomno}`, 
-              'time': {
-                '$exists': true
-              }
-            }
-          }, {
-            '$sort': {
-              'time': -1
-            }
-          }, {
-            '$limit': 1
-          }
-        ]
+            $match: {
+              roomno: `${itm.roomno}`,
+              time: {
+                $exists: true,
+              },
+            },
+          },
+          {
+            $sort: {
+              time: -1,
+            },
+          },
+          {
+            $limit: 1,
+          },
+        ];
         let val = await client
           .db("sample_airbnb")
           .collection("ListingsAndReviews")
           .aggregate(pipeline)
           .toArray();
         //
-        
-        if(val[0]!=null){
-         result.push(val[0]);
+
+        if (val[0] != null) {
+          result.push(val[0]);
         }
       }
     }
 
-   
     let swap = (a, b) => {
       let t = a;
       a = b;
@@ -268,10 +292,9 @@ let sendata = async (rno, email) => {
     };
 
     let quickSort = async (low, high) => {
-      
       if (low < high) {
         /* pi is partitioning index, arr[p] is now 
-    at right place */
+    at right place 
         let pi = partition(low, high);
 
         // Separately sort elements before
@@ -281,36 +304,34 @@ let sendata = async (rno, email) => {
       }
     };
 
-    await  quickSort(0, result.length - 1)
+    await quickSort(0, result.length - 1);
 
     return result;
   } catch (err) {
     console.log(err);
   }
-};
-app.post("/recents",auth, (req, res) => {
-  recents(req.body).then((data) => {
-   
-    if(data.length!=0){
-      for(let ob2 of data){
-       
-        roomarray.push(ob2.roomno)
+};*/
+app.post("/recents", auth, (req, res) => {
+  /*recents(req.body).then((data) => {
+    if (data.length != 0) {
+      for (let ob2 of data) {
+        roomarray.push(ob2.roomno);
       }
-    
-    sendata(data, req.email).then((data) => res.json(data));
-    }else{
-      res.json([])
+
+      sendata(data, req.email).then((data) => res.json(data));
+    } else {
+      res.json([]);
     }
-   
-  });
+  });*/
+  recents(req.body).then(data=>res.json(data));
 });
 
 //socket stuff
 let roomid = "";
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
-  
-/*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
+
+  /*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
   const changeStream = collection.watch([]);
   changeStream.on('change', (next) => {
   console.log(next)
@@ -320,16 +341,22 @@ io.on("connection", (socket) => {
   socket.broadcast.to(next.fullDocument.roomno).emit("changed")
 });*/
   socket.on("join", (data) => {
-    console.log("joined all")
-    if(data!=={}){
-    socket.join(data.no);
-    roomid = data.no;
-    }
-    socket.join(roomarray)
+    
+ 
+      let roomarray=Room.find({members:data.email})
+      if(roomarray.length!==0){
+        socket.join(roomarray);
+
+      }else{
+        console.log("joined")
+        socket.join(data.no)
+      }
+     
+    
+    
   });
 
   socket.on("send", (data) => {
-    console.log("reached send call server")
     io.to(roomid).emit("text", data);
   });
 
