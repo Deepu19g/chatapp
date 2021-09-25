@@ -1,6 +1,21 @@
-#leftend{
-    border: 1px solid darkgrey;
+#leftend {
+  border: 1px solid darkgrey;
 }
-#icon{
-    height: 2rem;
+#icon {
+  height: 2rem;
+}
+#roomnames {
+  background: orange;
+  margin-top: 5px;
+  display: "flex";
+
+  padding-left: 0.5rem;
+  
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+
+
+}
+#right{
+  padding-left: 0px !important;
 }

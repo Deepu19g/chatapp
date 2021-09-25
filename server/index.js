@@ -45,7 +45,6 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
-
 let connection = async (itm) => {
   try {
     let data = await Room.find({ roomno: itm.roomno }).exec();
@@ -182,6 +181,7 @@ let roomdata = async (itm) => {
       }
       //itm._id=temp[0]._id
     } else {
+      itm.admin = itm.members;
       room = new Room(itm);
       await room.save();
     }
@@ -201,29 +201,43 @@ app.post("/roomdata", (req, res) => {
 let recents = async ({ email }) => {
   //console.log("email"+email)
   try {
-    let user=await User.find({email:email})
+    //let user=await User.find({email:email})
+    let roomarray = await Room.find({ members: email });
+
+    let roomnos = roomarray.map((itm) => itm.roomno);
+    console.log("rnos" + JSON.stringify(roomnos));
+    console.log("type");
+    console.log(roomnos);
     result = await Chat.aggregate([
       {
-        '$match': {
-          '$expr': {
-            '$in': [
-              `${email}`, '$members'
-            ]
-          }
-        }
-      }, {
-        '$group': {
-          '_id': '$roomno', 
-          'lastchat': {
-            '$max': '$time'
-          }
-        }
-      }
-    ])
+        $unionWith: {
+          coll: "rooms",
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $in: [`$roomno`, roomnos],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$roomno",
+          lastchat: {
+            $max: "$time",
+          },
+        },
+      },
+      {
+        $sort: {
+          lastchat: -1,
+        },
+      },
+    ]);
 
-    console.log("res");
-    console.log(result);
-    return result
+    console.log("result" + JSON.stringify(result));
+    return result;
     //console.log(result[1].msgs);
     //return result;
   } catch (er) {
@@ -323,14 +337,54 @@ app.post("/recents", auth, (req, res) => {
       res.json([]);
     }
   });*/
-  recents(req.body).then(data=>res.json(data));
+  recents(req.body).then((data) => res.json(data));
+});
+
+//leave room
+app.post("/leave", (req, res) => {
+  let find = async () => {
+    try {
+      let targetRoom = await Room.find({ roomno: req.body.roomno });
+      targetRoom[0].members = targetRoom[0].members.filter(
+        (itm) => itm != req.body.email
+      );
+      await targetRoom[0].save();
+      res.send("good");
+    } catch (err) {
+      res.send("bad");
+    }
+  };
+  find();
+});
+
+//delete room
+app.delete("/delete", (req, res) => {
+  let del = async () => {
+    try {
+      console.log("reached back del")
+      let room = await Room.findOne({ roomno: req.body.roomno });
+      console.log(req.body)
+      console.log(room)
+     if (room.admin.includes(req.body.email)) {
+        await Room.deleteOne({ roomno: req.body.roomno });
+        await Chat.deleteOne({ roomno: req.body.roomno });
+        io.to(req.body.roomno).emit("deleted")
+        res.send("room deleted");
+      }else{
+        res.status(400).send({msg:"only admins can delete room"})
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  del();
 });
 
 //socket stuff
 let roomid = "";
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
-
+  console.log("connected");
   /*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
   const changeStream = collection.watch([]);
   changeStream.on('change', (next) => {
@@ -340,24 +394,33 @@ io.on("connection", (socket) => {
   //socket.to().emit("changed")
   socket.broadcast.to(next.fullDocument.roomno).emit("changed")
 });*/
-  socket.on("join", (data) => {
-    
- 
-      let roomarray=Room.find({members:data.email})
-      if(roomarray.length!==0){
-        socket.join(roomarray);
+  socket.on("initialjoin", (data) => {
+    let roomarrset = async () => {
+      try {
+        let roomarray = await Room.find({ members: data.email });
+        let roomnos = [];
+        for (obj of roomarray) {
+          roomnos = [...roomnos, obj.roomno];
+        }
 
-      }else{
-        console.log("joined")
-        socket.join(data.no)
+        console.log(roomnos);
+        if (roomarray.length !== 0) {
+          //console.log("rarray reached")
+          //console.log(roomnos)
+          socket.join(roomnos);
+        }
+      } catch (err) {
+        console.log(err);
       }
-     
-    
-    
+    };
+    roomarrset();
+  });
+  socket.on("join", (data) => {
+    socket.join(data.no);
   });
 
   socket.on("send", (data) => {
-    io.to(roomid).emit("text", data);
+    io.in(data.roomno).emit("text", data);
   });
 
   socket.on("disconnect", () => {

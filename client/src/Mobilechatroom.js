@@ -1,28 +1,30 @@
 import { React, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-import { Navbar, Container, OverlayTrigger } from "react-bootstrap";
-//import {Popover} from 'react-bootstrap'
-import Popover from "@mui/material/Popover";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import AppBar from "@mui/material/AppBar";
-import IconButton from "@mui/material/IconButton";
-import Toolbar from "@mui/material/Toolbar";
 //import {Popover} from 'react-bootstrap'
 import Box from "@mui/material/Box";
-import { useHistory } from "react-router-dom";
+import Popover from "@mui/material/Popover";
+import Typography from "@mui/material/Typography";
+
+import { useHistory, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import { io } from "socket.io-client";
+import Toolbar from "@mui/material/Toolbar";
 
-function Chatroom({ socket, email, recent2,setrecent }) {
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+
+function Mobilechatroom({ location }) {
   const history = useHistory();
-
-  const [anchorEl, setAnchorEl] = useState(null);
+  //let { obj }=useParams()
+  let { recent2, email } = location.state;
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
-
+  const [anchorEl, setAnchorEl] = useState(null);
   //const [subrecent,setsubrecent] = useState(recent2)
+  console.log(location.state);
   const sendmsg = async () => {
     try {
       // console.log("done")
@@ -33,7 +35,11 @@ function Chatroom({ socket, email, recent2,setrecent }) {
         time: new Date().getTime(),
       });
       console.log("after posting chat");
-      socket.emit("send", { msgs: msg, sender: email, roomno: recent2 });
+      socket2.current.emit("send", {
+        msgs: msg,
+        sender: email,
+        roomno: recent2,
+      });
     } catch (e) {
       console.log(e);
     }
@@ -44,22 +50,48 @@ function Chatroom({ socket, email, recent2,setrecent }) {
 
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
+  const socket2 = useRef();
 
   useEffect(() => {
-    //socket.current.emit()
-    console.log("initialised socket");
-    const roomsocket = socket.on("text", (data) => {
-      console.log(data.msgs);
-      console.log(recent2);
-      if (data.roomno === recent2) {
+    window.addEventListener("resize", updateMedia);
+    return () => window.removeEventListener("resize", updateMedia);
+  });
+
+  const updateMedia = () => {
+    console.log("reached resize");
+    if (window.innerWidth > 576) {
+      history.goBack();
+    }
+  };
+  useEffect(() => {
+    socket2.current = io("ws://localhost:5000");
+    //sock2et.current.emit()
+    const roomsocket = socket2.current.on("text", (data) => {
+      if (data.roomno == recent2) {
         console.log("yeah matched");
 
         setrecieved((prev) => [...prev, data]);
       }
     });
-    return () => socket.off("text", roomsocket);
+    return () => socket2.current.off("text", roomsocket);
   }, [recent2]);
-  console.log(recent2);
+
+  let handledel = async () => {
+    let res = "";
+    try {
+      res = await axios.delete("http://localhost:5000/delete", {
+        data: {
+          roomno: recent2,
+          email: email,
+        },
+      });
+      history.goBack();
+    } catch (err) {
+      alert(err.response.data.msg);
+      console.log(err.response.data);
+    }
+  };
+
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
@@ -71,7 +103,7 @@ function Chatroom({ socket, email, recent2,setrecent }) {
           roomno: recent2,
         });
         //.then((res) => res.data);
-        //console.log(recent2);
+        console.log(recent2);
         console.log(status);
         setrecieved(status.data);
       } catch (err) {
@@ -79,62 +111,25 @@ function Chatroom({ socket, email, recent2,setrecent }) {
       }
     };
     initialdata();
-    setmsg("");
   }, [recent2]);
-  /*let save= async()=>{
-     console.log("reaching client blur")
-     try{
-      const res=await fetch('http://localhost:5000/post', {
-        method: 'POST',
-        headers: {
-         
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          "mode" : "no-cors"
-        },
-        body: JSON.stringify({
-          sender:username,
-          msgs:recieved
-        })
-      })
-      console.log(res)
-     }catch(e){
-       console.log("failed")
-     }
-    
-  }*/
+
   console.log("loaded roomchat");
   let leaveRoom = async () => {
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
       roomno: recent2,
     });
-
-    history.goBack();
+    if (res.data == "good") {
+      console.log(res.data);
+      console.log(res.data == "good");
+      history.goBack();
+    }
   };
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const toggle = () => setPopoverOpen(!popoverOpen);
 
-  let handledel = async () => {
-    console.log("reached del");
-    let res = "";
-    try {
-      res = await axios.delete("http://localhost:5000/delete", {
-        data: {
-          roomno: recent2,
-          email: email,
-        },
-      });
-    } catch (err) {
-      if (err.response) {
-        alert(err.response.data.msg);
-      }
-
-      console.log(err.response.data);
-    }
-  };
-
+  
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -144,48 +139,54 @@ function Chatroom({ socket, email, recent2,setrecent }) {
   };
 
   const open = Boolean(anchorEl);
-  const id = open ? "simple-popover" : undefined;
+  const id = open ? 'simple-popover' : undefined;
+
   return (
     <div id="msgside">
-      <AppBar position="static" style={{ backgroundColor: "orange" }}>
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-            onClick={() => setrecent("")}
-          >
-            <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {recent2}
-          </Typography>
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static" style={{backgroundColor:"orange"}}>
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+              onClick={() => history.goBack()}
+            >
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+               
+              ></FontAwesomeIcon>
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              {recent2}
+            </Typography>
 
-          <IconButton onClick={handleClick}>
+            <IconButton onClick={handleClick}>
             <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
           </IconButton>
-          <Popover
-            id={id}
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handleClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-          >
-            <Typography sx={{ p: 2 }} component={'div'}>
-              {" "}
-              <ul>
-                <p onClick={leaveRoom}>Leave Room</p>
-                <p onClick={handledel}>Delete Room</p>
-              </ul>
-            </Typography>
-          </Popover>
-        </Toolbar>
-      </AppBar>
+            <Popover
+              id={id}
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+            >
+              <Typography sx={{ p: 2 }} component={'div'}>
+                {" "}
+                <ul>
+                  <p onClick={leaveRoom}>Leave Room</p>
+                  <p onClick={handledel}>Delete Room</p>
+                </ul>
+              </Typography>
+            </Popover>
+          </Toolbar>
+        </AppBar>
+      </Box>
       <div className="d-flex flex-column chatdiv">
         {recieved.map((msg, index) => {
           if (msg.sender === email) {
@@ -228,4 +229,4 @@ function Chatroom({ socket, email, recent2,setrecent }) {
   );
 }
 
-export default Chatroom;
+export default Mobilechatroom;

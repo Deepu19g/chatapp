@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
   const roomSchema = new Schema({
     time:String,
     roomno:String,
-    
+    admin:[String],
     members:[String],
     
   },{timestamps:true});

@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef, useCallback } from "react";
+import { React, useState, useEffect, useRef } from "react";
 import {
   Route,
   Switch,
@@ -11,12 +11,12 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import querystring from "query-string";
 import axios from "axios";
-import { Grid, Box, Paper } from "@mui/material";
+
+import {Grid,Box} from "@mui/material"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { styled } from "@mui/material/styles";
 import "./ChatLanding.css";
-function ChatLanding({ email }) {
+function MobileLanding({ email }) {
   const [roomno, setroomno] = useState("");
   const { path, url } = useRouteMatch();
   const [val, setval] = useState([]);
@@ -27,7 +27,10 @@ function ChatLanding({ email }) {
   const history = useHistory();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
+
   let submit = async () => {
+    console.log("recent backdoor");
+
     const res = await axios.post("http://localhost:5000/roomdata", {
       members: email,
       time: new Date().getTime(),
@@ -43,10 +46,18 @@ function ChatLanding({ email }) {
     setroomno(e.target.value);
   };
 
+  
+
   useEffect(() => {
+    //func to find rooms associated wuth a user
+    console.log(typeof localStorage.getItem(`loggedin${email}`));
+    console.log(localStorage.getItem(`loggedin${email}`) == "false");
     if (localStorage.getItem(`loggedin${email}`) == "false") {
+      console.log("reached back");
+
       history.goBack();
     } else {
+      console.log("reached load fetch");
       initialfetch();
     }
     return () => {
@@ -59,11 +70,9 @@ function ChatLanding({ email }) {
       console.log("broadcast msg receieved");
       initialfetch();
     });
-    socket.current.on("deleted", () => {
-      console.log("deleted");
-      setrecent("");
-      initialfetch();
-    });
+    socket.current.on("deleted",()=>{
+      initialfetch()
+    })
     socket.current.emit("initialjoin", { email });
     return () => {
       source.cancel("async func canceled");
@@ -72,7 +81,7 @@ function ChatLanding({ email }) {
   }, []); //TODO: reinitialize socket on user change
 
   let initialfetch = async () => {
-    console.log("initial called");
+    console.log("initial fetched");
     let jwtoken = localStorage.getItem(`jwt${email}`);
     let config = {
       headers: {
@@ -94,33 +103,34 @@ function ChatLanding({ email }) {
       setval(res);
       //setval(res.reverse());
     } catch (err) {
-      if (axios.isCancel(err)) {
-        console.log(err);
-      } else {
+      if(axios.isCancel(err)){
+        console.log(err)
+      }else{
         history.goBack();
       }
-
-      //console.log(err)
+     
     }
   };
+  console.log(path);
+  let clickrecents = (e) => {
+    setrecent(e.currentTarget.textContent);
+    console.log(socket.current);
+    let obj = {
+      email: email,
+      recent2: e.currentTarget.textContent,
+    };
 
-  const clickrecents = useCallback(
-    (e) => {
-      setrecent(e.currentTarget.textContent);
-
-      //setrecent(e.target.innerHTML.split("<img>")[0]);
-      //socket.current.emit("join", { no: e.target.innerHTML, email: email });
-      // history.push(`${url}/${e.target.innerHTML}`);
-      //history.push(`/${url}/${e.target.innerHTML}`);
-    },
-    [recent]
-  );
-
+    history.push({
+      pathname: `${url}/chats`,
+      state: obj,
+    });
+  };
+  console.log(recent);
   return (
     <Box sx={{ flexGrow: 1 }}>
      
       <Grid container spacing={2}>
-        <Grid item xs={3} style={{ overflowY: "scroll" ,minHeight:"100vh"}} >
+        <Grid item xs={12} style={{ overflowY: "scroll" ,minHeight:"100vh"}} >
           <p>Join Room</p>
           <p>Room no:</p>
           <input
@@ -144,20 +154,10 @@ function ChatLanding({ email }) {
             );
           })}
         </Grid>
-        <Grid item xs={9} style={{paddingLeft:"0"}}>
-          {recent !== "" && (
-            <Chatroom
-              //member={member}
-              socket={socket.current}
-              email={email}
-              recent2={recent}
-              setrecent={setrecent}
-            ></Chatroom>
-          )}
-        </Grid>
+       
       </Grid>
     </Box>
   );
 }
 
-export default ChatLanding;
+export default MobileLanding;

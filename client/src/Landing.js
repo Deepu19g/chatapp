@@ -30,6 +30,7 @@ function Landing() {
           username: username,
           password: password,
           email: email,
+          
         });
        
           setwarn(false)

@@ -6,6 +6,7 @@ function Login() {
   const [email, setemail] = useState("");
   const [warn, setwarn] = useState("");
   const [auth,setauth] = useState(true)
+  
   const history = useHistory();
   let logging = async (e) => {
     
@@ -21,7 +22,7 @@ function Login() {
      
      if ( status=="success") {
         
-       
+      localStorage.setItem(`loggedin${email}`, true);
         history.push(`/ChatLanding/${email}`);
       } else {
         setwarn(status);
