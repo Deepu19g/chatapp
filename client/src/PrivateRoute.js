@@ -4,7 +4,6 @@ import ChatLanding from './ChatLanding'
 import MobileLanding from './MobileLanding';
 
 
-
 function PrivateRoute() {
   const [isDesktop, setDesktop] = useState(window.innerWidth > 576)
   useEffect(() => {
@@ -22,7 +21,8 @@ const updateMedia = () => {
     return (
       <div>
       {isDesktop ? (
-        <ChatLanding email={email}></ChatLanding>
+         <ChatLanding email={email}></ChatLanding>
+       
       ) : (
         <MobileLanding email={email}></MobileLanding>
       )}

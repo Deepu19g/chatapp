@@ -10,6 +10,7 @@ module.exports = function (req,res,next) {
             //console.log(req.decoded)
             next()
         }catch(err){
+           
             console.log("error found")
            res.status(401).send({msg:"invalid token"})
         }

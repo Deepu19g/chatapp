@@ -19,26 +19,30 @@ import IconButton from "@mui/material/IconButton";
 function Mobilechatroom({ location }) {
   const history = useHistory();
   //let { obj }=useParams()
-  let { recent2, email } = location.state;
+  let { rno, email, cp } = location.state.data;
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const socket2 = useRef();
+  //const socket= Object(location.state.data.socket)
+  //console.log(location.state.data.socket)
   //const [subrecent,setsubrecent] = useState(recent2)
-  console.log(location.state);
+  //console.log(location.state);
   const sendmsg = async () => {
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
         sender: email,
         msgs: msg,
-        roomno: recent2,
+        roomno: rno,
+        invitecode: cp,
         time: new Date().getTime(),
       });
       console.log("after posting chat");
       socket2.current.emit("send", {
         msgs: msg,
         sender: email,
-        roomno: recent2,
+        invitecode: cp,
       });
     } catch (e) {
       console.log(e);
@@ -50,7 +54,7 @@ function Mobilechatroom({ location }) {
 
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
-  const socket2 = useRef();
+
 
   useEffect(() => {
     window.addEventListener("resize", updateMedia);
@@ -63,25 +67,23 @@ function Mobilechatroom({ location }) {
       history.goBack();
     }
   };
-  useEffect(() => {
-    socket2.current = io("ws://localhost:5000");
-    //sock2et.current.emit()
-    const roomsocket = socket2.current.on("text", (data) => {
-      if (data.roomno == recent2) {
-        console.log("yeah matched");
 
-        setrecieved((prev) => [...prev, data]);
-      }
-    });
-    return () => socket2.current.off("text", roomsocket);
-  }, [recent2]);
+  console.log(cp);
+  useEffect(() => {
+    //sock2et.current.emit()
+    socket2.current = io("ws://localhost:5000");
+    return () => {
+     console.log("sock child closw")
+      socket2.current.close()
+    };
+  }, []);
 
   let handledel = async () => {
     let res = "";
     try {
       res = await axios.delete("http://localhost:5000/delete", {
         data: {
-          roomno: recent2,
+          invitecode: cp,
           email: email,
         },
       });
@@ -94,30 +96,40 @@ function Mobilechatroom({ location }) {
 
   useEffect(() => {
     //setsubrecent(recent2)
+    const roomsocket = socket2.current.on("text", (data) => {
+      //console.log(data);
+      console.log("hai");
+      if (data.invitecode === cp) {
+        console.log("yeah matched");
+
+        setrecieved((prev) => [...prev, data]);
+      }
+    });
     let initialdata = async () => {
       //setrecieved([]);
-      console.log("initialdata called");
+
       //console.log(recent2);
       try {
         let status = await axios.post("http://localhost:5000/data", {
-          roomno: recent2,
+          invitecode: cp,
         });
         //.then((res) => res.data);
-        console.log(recent2);
-        console.log(status);
+
         setrecieved(status.data);
+        setmsg("");
       } catch (err) {
         console.log(err);
       }
     };
     initialdata();
-  }, [recent2]);
+    socket2.current.emit("join", { no: cp, email: email });
+    
+  }, [cp]);
 
-  console.log("loaded roomchat");
   let leaveRoom = async () => {
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
-      roomno: recent2,
+      invitecode: cp,
     });
     if (res.data == "good") {
       console.log(res.data);
@@ -129,7 +141,6 @@ function Mobilechatroom({ location }) {
 
   const toggle = () => setPopoverOpen(!popoverOpen);
 
-  
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -139,12 +150,12 @@ function Mobilechatroom({ location }) {
   };
 
   const open = Boolean(anchorEl);
-  const id = open ? 'simple-popover' : undefined;
+  const id = open ? "simple-popover" : undefined;
 
   return (
     <div id="msgside">
       <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static" style={{backgroundColor:"orange"}}>
+        <AppBar position="sticky" style={{ backgroundColor: "orange" }}>
           <Toolbar>
             <IconButton
               size="large"
@@ -154,18 +165,15 @@ function Mobilechatroom({ location }) {
               sx={{ mr: 2 }}
               onClick={() => history.goBack()}
             >
-              <FontAwesomeIcon
-                icon={faArrowLeft}
-               
-              ></FontAwesomeIcon>
+              <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
             </IconButton>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              {recent2}
+              {rno}
             </Typography>
 
             <IconButton onClick={handleClick}>
-            <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
-          </IconButton>
+              <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
+            </IconButton>
             <Popover
               id={id}
               open={open}
@@ -176,7 +184,7 @@ function Mobilechatroom({ location }) {
                 horizontal: "left",
               }}
             >
-              <Typography sx={{ p: 2 }} component={'div'}>
+              <Typography sx={{ p: 2 }} component={"div"}>
                 {" "}
                 <ul>
                   <p onClick={leaveRoom}>Leave Room</p>

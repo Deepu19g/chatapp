@@ -8,6 +8,7 @@ const Chat = require("./Models/Chat");
 const User = require("./Models/User");
 const Room = require("./Models/Room");
 const { ObjectId } = require("mongodb");
+const { v1: uuidv1 } = require("uuid");
 require("dotenv").config();
 /*const http = require('http');
 
@@ -47,8 +48,8 @@ app.get("/", (req, res) => {
 
 let connection = async (itm) => {
   try {
-    let data = await Room.find({ roomno: itm.roomno }).exec();
-    console.log("data" + JSON.stringify(data));
+    let data = await Room.find({ invitecode: itm.invitecode }).exec();
+   // console.log("data" + JSON.stringify(data));
     itm.members = data[0].members;
     const chat = new Chat(itm);
     await chat.save();
@@ -94,7 +95,7 @@ let senddata = async (data1) => {
     result = await Chat.find(
       //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
       {
-        roomno: { $eq: data1 },
+        invitecode: { $eq: data1 },
       }
     );
     //console.log(result);
@@ -106,7 +107,7 @@ let senddata = async (data1) => {
 };
 
 app.post("/data", (req, res) => {
-  senddata(req.body.roomno).then((data) => {
+  senddata(req.body.invitecode).then((data) => {
     //console.log(data)
     res.json(data);
   });
@@ -164,37 +165,44 @@ app.post("/login", (req, res) => {
   });
 });
 
-//setting roomdata
-let roomdata = async (itm) => {
+//create room
+
+app.post("/roomcreate", (req, res) => {
+  let roomdata = async (itm) => {
+    itm.admin = itm.members;
+    itm.invitecode = uuidv1().split("-")[0];
+  
+    let room = new Room(itm);
+    await room.save();
+    res.send({invitecode:itm.invitecode})
+  };
   try {
-    let user = await User.find({ email: { $eq: itm.members } });
+    console.log(req.body)
 
-    itm.members = user[0].email;
-
-    let temp = await Room.find({ roomno: { $eq: itm.roomno } });
-    let room = {};
-
-    if (temp.length != 0) {
-      if (temp[0].members.includes(itm.members) == false) {
-        temp[0].members = [...temp[0].members, itm.members];
-        await temp[0].save();
-      }
-      //itm._id=temp[0]._id
-    } else {
-      itm.admin = itm.members;
-      room = new Room(itm);
-      await room.save();
-    }
-
-    /**/
+    roomdata(req.body)
   } catch (err) {
-    console.log(err);
+    res.status(500).send("room cant be created");
   }
-};
-app.post("/roomdata", (req, res) => {
-  roomdata(req.body).then((data) => {
-    res.send(data);
-  });
+});
+
+//join a room
+
+app.post("/roomjoin", (req, res) => {
+  let roomjoin = async (itm) => {
+    let room = await Room.find({ invitecode: itm.invite }).exec();
+
+    if (room.length !== 0) {
+      if (room[0].members.includes(itm.members)===false) {
+        room[0].members = [...room[0].members, itm.members];
+        await room[0].save();
+      }
+      res.send(room[0].invitecode);
+    } else {
+      res.status(400).send("room not found");
+    }
+    //itm._id=temp[0]._id
+  };
+  roomjoin(req.body);
 });
 
 //fetching recent rooms and sorting them
@@ -210,31 +218,33 @@ let recents = async ({ email }) => {
     console.log(roomnos);
     result = await Chat.aggregate([
       {
-        $unionWith: {
-          coll: "rooms",
-        },
-      },
-      {
-        $match: {
-          $expr: {
-            $in: [`$roomno`, roomnos],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$roomno",
-          lastchat: {
-            $max: "$time",
-          },
-        },
-      },
-      {
-        $sort: {
-          lastchat: -1,
-        },
-      },
-    ]);
+        '$unionWith': {
+          'coll': 'rooms'
+        }
+      }, {
+        '$match': {
+          '$expr': {
+            '$in': [
+             `$roomno`, roomnos,
+            ]
+          }
+        }
+      }, {
+        '$group': {
+          '_id': {
+            'invitecode': '$invitecode', 
+            'roomno': '$roomno'
+          }, 
+          'lastchat': {
+            '$max': '$time'
+          }
+        }
+      }, {
+        '$sort': {
+          'lastchat': -1
+        }
+      }
+    ])
 
     console.log("result" + JSON.stringify(result));
     return result;
@@ -344,7 +354,7 @@ app.post("/recents", auth, (req, res) => {
 app.post("/leave", (req, res) => {
   let find = async () => {
     try {
-      let targetRoom = await Room.find({ roomno: req.body.roomno });
+      let targetRoom = await Room.find({ invitecode: req.body.invitecode});
       targetRoom[0].members = targetRoom[0].members.filter(
         (itm) => itm != req.body.email
       );
@@ -361,17 +371,17 @@ app.post("/leave", (req, res) => {
 app.delete("/delete", (req, res) => {
   let del = async () => {
     try {
-      console.log("reached back del")
-      let room = await Room.findOne({ roomno: req.body.roomno });
-      console.log(req.body)
-      console.log(room)
-     if (room.admin.includes(req.body.email)) {
-        await Room.deleteOne({ roomno: req.body.roomno });
-        await Chat.deleteOne({ roomno: req.body.roomno });
-        io.to(req.body.roomno).emit("deleted")
+      console.log("reached back del");
+      let room = await Room.findOne({ invitecode: req.body.invitecode });
+      console.log(req.body);
+      console.log(room);
+      if (room.admin.includes(req.body.email)) {
+        await Room.deleteOne({ invitecode: req.body.invitecode });
+        await Chat.deleteOne({ invitecode: req.body.invitecode });
+        io.to(req.body.invitecode).emit("deleted");
         res.send("room deleted");
-      }else{
-        res.status(400).send({msg:"only admins can delete room"})
+      } else {
+        res.status(400).send({ msg: "only admins can delete room" });
       }
     } catch (err) {
       console.log(err);
@@ -398,16 +408,17 @@ io.on("connection", (socket) => {
     let roomarrset = async () => {
       try {
         let roomarray = await Room.find({ members: data.email });
-        let roomnos = [];
+        let roomcode = [];
         for (obj of roomarray) {
-          roomnos = [...roomnos, obj.roomno];
+          roomcode = [...roomcode, obj.invitecode];
         }
 
-        console.log(roomnos);
+       
         if (roomarray.length !== 0) {
           //console.log("rarray reached")
           //console.log(roomnos)
-          socket.join(roomnos);
+          socket.join(roomcode);
+          console.log("joined rooms"+JSON.stringify(roomcode))
         }
       } catch (err) {
         console.log(err);
@@ -420,7 +431,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send", (data) => {
-    io.in(data.roomno).emit("text", data);
+    console.log("sended"+JSON.stringify(data))
+    io.in(data.invitecode).emit("text", data);
   });
 
   socket.on("disconnect", () => {

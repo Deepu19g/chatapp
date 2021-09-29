@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
     msgs:String,
     roomno:String,
     sender:String,
+    invitecode:String,
     members:[String],
     time:String,
   },{timestamps:true});

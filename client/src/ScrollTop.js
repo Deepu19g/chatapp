@@ -1,28 +1,84 @@
-import { React, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-import { Navbar, Container, OverlayTrigger } from "react-bootstrap";
-//import {Popover} from 'react-bootstrap'
 import Popover from "@mui/material/Popover";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
+import PropTypes from "prop-types";
 import AppBar from "@mui/material/AppBar";
-import  IconButton  from "@mui/material/IconButton";
 import Toolbar from "@mui/material/Toolbar";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-//import {Popover} from 'react-bootstrap'
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+
+import CssBaseline from "@mui/material/CssBaseline";
+import useScrollTrigger from "@mui/material/useScrollTrigger";
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Fab from "@mui/material/Fab";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useHistory } from "react-router-dom";
 
-import { faArrowLeft, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowAltCircleUp,
+  faArrowLeft,
+  faEllipsisV,
+} from "@fortawesome/free-solid-svg-icons";
+//import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Zoom from "@mui/material/Zoom";
 
-function Chatroom({ socket, email, recent2, setrecent,invite }) {
+export function Top(props) {
+  const { children, window } = props;
+  console.log("hehe")
+  // Note that you normally won't need to set the window ref as useScrollTrigger
+  // will default to window.
+  // This is only being set here because the demo is in an iframe.
+  const trigger = useScrollTrigger({
+    target: window ? window() : undefined,
+    disableHysteresis: true,
+    threshold: 100,
+  });
+
+  const handleClick = (event) => {
+    const anchor = (event.target.ownerDocument || document).querySelector(
+      "#back-to-top-anchor"
+    );
+
+    if (anchor) {
+      anchor.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  };
+
+  return (
+    <Zoom in={trigger}>
+      <Box
+        onClick={handleClick}
+        role="presentation"
+        sx={{ position: "fixed", bottom: 16, right: 16 }}
+      >
+        {children}
+      </Box>
+    </Zoom>
+  );
+}
+
+Top.propTypes = {
+  children: PropTypes.element.isRequired,
+  /**
+   * Injected by the documentation to work in an iframe.
+   * You won't need it on your project.
+   */
+  window: PropTypes.func,
+};
+
+export default function BackToTop(props) {
+  const { socket, email, cp,rno ,setcp,initialfetch} = props;
   const history = useHistory();
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
-console.log(invite)
+
   //const [subrecent,setsubrecent] = useState(recent2)
   const sendmsg = async () => {
     try {
@@ -30,12 +86,12 @@ console.log(invite)
       const res = await axios.post("http://localhost:5000/post", {
         sender: email,
         msgs: msg,
-        roomno: recent2,
-        invitecode:invite,
+        roomno:rno,
+        invitecode:cp,
         time: new Date().getTime(),
       });
       console.log("after posting chat");
-      socket.emit("send", { msgs: msg, sender: email, roomno: recent2 });
+      socket.emit("send", { msgs: msg, sender: email, invitecode: cp });
     } catch (e) {
       console.log(e);
     }
@@ -52,16 +108,18 @@ console.log(invite)
     console.log("initialised socket");
     const roomsocket = socket.on("text", (data) => {
       console.log(data.msgs);
-      console.log(recent2);
-      if (data.roomno === recent2) {
+     
+      if (data.invitecode === cp) {
         console.log("yeah matched");
 
         setrecieved((prev) => [...prev, data]);
       }
     });
-    return () => socket.off("text", roomsocket);
-  }, [recent2]);
-  console.log(recent2);
+    return () => {
+      console.log("cleaned")
+      socket.off("text", roomsocket)};
+  }, [cp]);
+  
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
@@ -70,7 +128,7 @@ console.log(invite)
       //console.log(recent2);
       try {
         let status = await axios.post("http://localhost:5000/data", {
-          roomno: recent2,
+         invitecode:cp,
         });
         //.then((res) => res.data);
         //console.log(recent2);
@@ -82,7 +140,7 @@ console.log(invite)
     };
     initialdata();
     setmsg("");
-  }, [recent2]);
+  }, [cp]);
   /*let save= async()=>{
      console.log("reaching client blur")
      try{
@@ -109,10 +167,11 @@ console.log(invite)
   let leaveRoom = async () => {
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
-      roomno: recent2,
+     invitecode:cp,
     });
-
-    history.goBack();
+    setcp("");
+    initialfetch()
+    
   };
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -124,10 +183,11 @@ console.log(invite)
     try {
       res = await axios.delete("http://localhost:5000/delete", {
         data: {
-          roomno: recent2,
+          invitecode: cp,
           email: email,
         },
       });
+      setcp("")
     } catch (err) {
       if (err.response) {
         alert(err.response.data.msg);
@@ -148,8 +208,9 @@ console.log(invite)
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
   return (
-    <div >
-      <AppBar position="static" style={{ backgroundColor: "orange" }}>
+    <Box id="msgside">
+      <CssBaseline />
+      <AppBar position="sticky" style={{ backgroundColor: "orange" }}>
         <Toolbar>
           <IconButton
             size="large"
@@ -157,12 +218,12 @@ console.log(invite)
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
-            onClick={() => setrecent("")}
+            onClick={() => setcp("")}
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {recent2}
+            {rno}
           </Typography>
 
           <IconButton onClick={handleClick}>
@@ -188,46 +249,54 @@ console.log(invite)
           </Popover>
         </Toolbar>
       </AppBar>
-      <div className="d-flex flex-column chatdiv">
-        {recieved.map((msg, index) => {
-          if (msg.sender === email) {
-            return (
-              <p
-                key={index}
-                style={{
-                  alignSelf: "flex-end",
-                  backgroundColor: "#931bf5",
-                  color: "white",
-                  padding: 10,
-                  borderRadius: 8,
-                }}
-              >
-                {msg.msgs}
-              </p>
-            );
-          } else {
-            return (
-              <p
-                key={index}
-                style={{
-                  alignSelf: "flex-start",
-                  backgroundColor: "#f3f0f5",
-                  padding: 10,
-                  borderRadius: 8,
-                }}
-              >
-                {msg.msgs}
-              </p>
-            );
-          }
-        })}
-      </div>
-      <div style={{ position: "sticky", bottom: 10 }}>
-        <input value={msg} onChange={setmymsg} id="inpbox"></input>
-        <button onClick={sendmsg}>Send</button>
-      </div>
-    </div>
+      <Toolbar id="back-to-top-anchor" />
+      <Container>
+        <Box sx={{ my: 2 }}>
+          <Box className="d-flex flex-column chatdiv">
+            {recieved.map((msg, index) => {
+              if (msg.sender === email) {
+                return (
+                  <p
+                    key={index}
+                    style={{
+                      alignSelf: "flex-end",
+                      backgroundColor: "#931bf5",
+                      color: "white",
+                      padding: 10,
+                      borderRadius: 8,
+                    }}
+                  >
+                    {msg.msgs}
+                  </p>
+                );
+              } else {
+                return (
+                  <p
+                    key={index}
+                    style={{
+                      alignSelf: "flex-start",
+                      backgroundColor: "#f3f0f5",
+                      padding: 10,
+                      borderRadius: 8,
+                    }}
+                  >
+                    {msg.msgs}
+                  </p>
+                );
+              }
+            })}
+          </Box>
+          <div style={{ position: "sticky", bottom: 10 }}>
+            <input value={msg} onChange={setmymsg} id="inpbox"></input>
+            <button onClick={sendmsg}>Send</button>
+          </div>
+        </Box>
+      </Container>
+      <Top {...props}>
+        <Fab color="secondary" size="small" aria-label="scroll back to top">
+          <FontAwesomeIcon icon={faArrowAltCircleUp}></FontAwesomeIcon>
+        </Fab>
+      </Top>
+    </Box>
   );
 }
-
-export default Chatroom;

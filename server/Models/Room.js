@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
     roomno:String,
     admin:[String],
     members:[String],
-    
+    invitecode:String,
   },{timestamps:true});
 
   module.exports = mongoose.model('Room', roomSchema);
