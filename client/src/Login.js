@@ -34,7 +34,7 @@ function Login() {
 
   return (
     <div>
-      <form onSubmit={logging} method="POST">
+      {/*<form onSubmit={logging} method="POST">
         <label>
           Email
           <input
@@ -56,8 +56,11 @@ function Login() {
 
         <button type="submit">Login</button>
       </form>
-      {warn!=="" ? <p>{warn}</p> : ""}
-    </div>
+  {warn!=="" ? <p>{warn}</p> : ""}*/}
+  	
+	
+	
+  </div>
   );
 }
 

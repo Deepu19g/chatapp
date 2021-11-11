@@ -1,62 +1,41 @@
 import { React, useState, useEffect, useRef, useCallback } from "react";
 import { useHistory } from "react-router-dom";
-
-import { io } from "socket.io-client";
+import Popover from "@mui/material/Popover";
 import Typography from "@mui/material/Typography";
+import { io } from "socket.io-client";
+import IconButton from "@mui/material/IconButton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { Grid, Box, Button } from "@mui/material";
 import Modal from "@mui/material/Modal";
 import "./ChatLanding.css";
 import BackToTop from "./ScrollTop";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import Dummy from "./assets/dummyimage.jpg";
+import EventModal from "./Components/EventModal";
 function ChatLanding({ email }) {
+  const [anchorEl, setAnchorEl] = useState(null);
   const [roomno, setroomno] = useState("");
   const [invite, setinvite] = useState("");
   const [rno, setrno] = useState("");
   //const { path, url } = useRouteMatch();
   const [val, setval] = useState([]);
   const [recent, setrecent] = useState("");
-  const [open, setOpen] = useState(false);
+  const [mode, setmode] = useState();
   const [cp, setcp] = useState("");
   const socket = useRef();
   const history = useHistory();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
-  let submit = async () => {
-    let res = {};
-    try {
-      res = await axios.post("http://localhost:5000/roomjoin", {
-        invite: invite,
-        members: email,
-      });
-      //setrecent(res.data);
+  
+  const [Open, setOpen] = useState(false);
 
-      initialfetch();
-      socket.current.emit("join", { no: res.data, email: email });
-      setinvite(" ");
-      console.log(res.data);
-    } catch (err) {
-      alert(err.response.data);
-    }
-    //if such a username already exists deal with it later
-  };
-
-  const style = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 400,
-    bgcolor: "background.paper",
-    border: "2px solid #000",
-    boxShadow: 24,
-    p: 4,
-  };
-
-  const roomnochange = (e) => {
+  
+  
+  /*const roomnochange = (e) => {
     setroomno(e.target.value);
-  };
-
-  const handleClose = () => setOpen(false);
+  };*/
 
   useEffect(() => {
     if (localStorage.getItem(`loggedin${email}`) == "false") {
@@ -129,30 +108,55 @@ function ChatLanding({ email }) {
     setinvite(e.target.value);
   };
 
-  let createRoom = async () => {
-    try {
-      let res = await axios.post("http://localhost:5000/roomcreate", {
-        roomno: roomno,
-        members: email,
-        time: new Date().getTime(),
-      });
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const open = Boolean(anchorEl);
+  const id = open ? "simple-popover" : undefined;
 
-      setOpen(false);
-      initialfetch();
-      console.log(res.data.invitecode);
-      socket.current.emit("join", { no: res.data.invitecode, email: email });
-    } catch (err) {
-      alert(err.response.data);
-    }
+  const handleclose = () => {
+    setAnchorEl(null);
   };
 
+  let eventprops = {
+    mode: mode,
+    roomno: roomno,
+    setroomno: setroomno,
+    invite: invite,
+    invitechange:  invitechange ,
+    initialfetch:initialfetch,
+    email:email,
+    setinvite:setinvite,
+    socket:socket,
+    Open:Open,
+  setOpen:setOpen,
+    //create:createRoom,
+    //sub:submit,
+   
+  };
+  let joinclick=()=>{
+    setmode("join")
+    setOpen(true)
+    
+    handleclose()
+  }
+  let createclick=()=>{
+    setmode("create")
+    setOpen(true)
+    
+    handleclose()
+  }
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={2}>
-        <Grid item xs={3} style={{ overflowY: "scroll", minHeight: "100vh" }}>
-          <p>Join Room</p>
-          <p>Room no:</p>
-          <input
+        <Grid
+          item
+          lg={3}
+          md={4}
+          xs={5}
+          style={{ overflowY: "scroll", minHeight: "100vh" }}
+        >
+          {/*<input
             value={invite}
             onChange={invitechange}
             name="room"
@@ -160,40 +164,56 @@ function ChatLanding({ email }) {
           ></input>
           <button onClick={submit}>Submit</button>
 
-          <Button onClick={() => setOpen(true)}>Create</Button>
-          <Modal
+         
+          <AddCircleIcon
+            className="plusbuttonmain"
+            onClick={() => setOpen(true)}
+          ></AddCircleIcon>*/}
+          <Box className="ChatLanding-popicon">
+            <IconButton onClick={handleClick}>
+              <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
+            </IconButton>
+          </Box>
+          <Popover
+            id={id}
             open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
+            anchorEl={anchorEl}
+            onClose={handleclose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
           >
-            <Box sx={style}>
-              <Typography id="modal-modal-title" variant="h6" component="h2">
-                Text in a modal
-              </Typography>
-              <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                <input
-                  value={roomno}
-                  onChange={(e) => setroomno(e.target.value)}
-                ></input>
-                <button onClick={createRoom}>Create</button>
-              </Typography>
-            </Box>
-          </Modal>
+            <Typography sx={{ p: 2 }} component={"div"}>
+              {" "}
+              <ul>
+                <p onClick={joinclick}>Join Room</p>
+                <p onClick={createclick}>Create Room</p>
+              </ul>
+            </Typography>
+          </Popover>
+         {(mode!==undefined) ? <EventModal {...eventprops}></EventModal>:<Box></Box>} 
           {val.map((itm, index) => {
             return (
               <div
                 key={index}
                 id="roomnames"
                 onClick={() => clickrecents(itm._id)}
-                className="d-flex justify-content-between align-items-center"
+                className="d-flex align-items-center"
               >
-                <p>{itm._id.roomno}</p>
+                <img src={Dummy} alt="img" className="dummyimg"></img>
+                <p className="dummyimgtxt">{itm._id.roomno}</p>
               </div>
             );
           })}
         </Grid>
-        <Grid item xs={9} style={{ paddingLeft: "0", overflowY: "scroll" }}>
+        <Grid
+          item
+          lg={9}
+          md={8}
+          xs={7}
+          style={{ paddingLeft: "0", overflowY: "scroll" }}
+        >
           {cp !== "" && (
             <BackToTop
               socket={socket.current}

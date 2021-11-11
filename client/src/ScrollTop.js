@@ -20,13 +20,14 @@ import {
   faArrowAltCircleUp,
   faArrowLeft,
   faEllipsisV,
+  faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
 //import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Zoom from "@mui/material/Zoom";
 
 export function Top(props) {
   const { children, window } = props;
-  console.log("hehe")
+
   // Note that you normally won't need to set the window ref as useScrollTrigger
   // will default to window.
   // This is only being set here because the demo is in an iframe.
@@ -72,7 +73,7 @@ Top.propTypes = {
 };
 
 export default function BackToTop(props) {
-  const { socket, email, cp,rno ,setcp,initialfetch} = props;
+  const { socket, email, cp, rno, setcp, initialfetch } = props;
   const history = useHistory();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -86,8 +87,8 @@ export default function BackToTop(props) {
       const res = await axios.post("http://localhost:5000/post", {
         sender: email,
         msgs: msg,
-        roomno:rno,
-        invitecode:cp,
+        roomno: rno,
+        invitecode: cp,
         time: new Date().getTime(),
       });
       console.log("after posting chat");
@@ -102,24 +103,22 @@ export default function BackToTop(props) {
 
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
-
+  console.log(cp);
   useEffect(() => {
     //socket.current.emit()
     console.log("initialised socket");
     const roomsocket = socket.on("text", (data) => {
       console.log(data.msgs);
-     
+
       if (data.invitecode === cp) {
         console.log("yeah matched");
 
         setrecieved((prev) => [...prev, data]);
       }
     });
-    return () => {
-      console.log("cleaned")
-      socket.off("text", roomsocket)};
+    return () => socket.off("text", roomsocket);
   }, [cp]);
-  
+
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
@@ -128,7 +127,7 @@ export default function BackToTop(props) {
       //console.log(recent2);
       try {
         let status = await axios.post("http://localhost:5000/data", {
-         invitecode:cp,
+          invitecode: cp,
         });
         //.then((res) => res.data);
         //console.log(recent2);
@@ -163,15 +162,14 @@ export default function BackToTop(props) {
      }
     
   }*/
-  console.log("loaded roomchat");
+
   let leaveRoom = async () => {
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
-     invitecode:cp,
+      invitecode: cp,
     });
     setcp("");
-    initialfetch()
-    
+    initialfetch();
   };
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -187,7 +185,7 @@ export default function BackToTop(props) {
           email: email,
         },
       });
-      setcp("")
+      setcp("");
     } catch (err) {
       if (err.response) {
         alert(err.response.data.msg);
@@ -210,7 +208,7 @@ export default function BackToTop(props) {
   return (
     <Box id="msgside">
       <CssBaseline />
-      <AppBar position="sticky" style={{ backgroundColor: "orange" }}>
+      <AppBar position="sticky" style={{ backgroundColor: "#23a0e8" }}>
         <Toolbar>
           <IconButton
             size="large"
@@ -286,9 +284,21 @@ export default function BackToTop(props) {
               }
             })}
           </Box>
-          <div style={{ position: "sticky", bottom: 10 }}>
+          <div
+            style={{
+              position: "sticky",
+              bottom: 10,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <input value={msg} onChange={setmymsg} id="inpbox"></input>
-            <button onClick={sendmsg}>Send</button>
+            <FontAwesomeIcon
+              icon={faPaperPlane}
+              onClick={sendmsg}
+              className="sendbtn"
+            ></FontAwesomeIcon>
           </div>
         </Box>
       </Container>

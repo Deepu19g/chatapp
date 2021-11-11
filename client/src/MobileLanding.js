@@ -6,6 +6,7 @@ import {
   useHistory,
   useRouteMatch,
 } from "react-router-dom";
+import Dummy from "./assets/dummyimage.jpg"
 import Chatroom from "./Chatroom";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -17,6 +18,7 @@ import { Grid, Box, Button } from "@mui/material";
 import "./MobileLanding.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import "./ChatLanding.css";
 function MobileLanding({ email }) {
   const [roomno, setroomno] = useState("");
@@ -98,6 +100,7 @@ function MobileLanding({ email }) {
       initialfetch();
     });
     socket.current.on("deleted", () => {
+      console.log("delete recieved");
       initialfetch();
     });
     socket.current.emit("initialjoin", { email });
@@ -158,20 +161,10 @@ function MobileLanding({ email }) {
   console.log(recent);
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1 }} className="mob-top">
       <Grid container spacing={2}>
         <Grid item xs={12} style={{ overflowY: "scroll", minHeight: "100vh" }}>
-          <p>Join Room</p>
-          <p>Room no:</p>
-          <input
-            value={invite}
-            onChange={invitechange}
-            name="room"
-            type="text"
-          ></input>
-          <button onClick={submit}>Submit</button>
-
-          <Button onClick={() => setOpen(true)}>Create</Button>
+          
           <Modal
             open={open}
             onClose={handleClose}
@@ -191,19 +184,25 @@ function MobileLanding({ email }) {
               </Typography>
             </Box>
           </Modal>
-
+<Box className="mob-top">
           {val.map((itm, index) => {
             return (
               <div
                 key={index}
                 id="roomnames"
                 onClick={() => clickrecents(itm._id)}
-                className="d-flex justify-content-between align-items-center"
+                className="d-flex  align-items-center"
               >
-                <p>{itm._id.roomno}</p>
+                <img src={Dummy} alt="img" className="dummyimg"></img>
+                <p className="dummyimgtxt">{itm._id.roomno}</p>
               </div>
             );
           })}
+          </Box>
+          <AddCircleIcon
+            className="plusbutton"
+            onClick={() => setOpen(true)}
+          ></AddCircleIcon>
         </Grid>
       </Grid>
     </Box>

@@ -13,7 +13,8 @@ import Landing from "./Landing";
 import Login from "./Login";
 import PrivateRoute from "./PrivateRoute";
 
-import Mobilechatroom from "./Mobilechatroom";
+
+import Mobilechat from "./Components/Mobilechat";
 function App() {
   
 
@@ -22,7 +23,7 @@ function App() {
       <Router>
         <Switch>
           <Route exact path="/" component={Landing}></Route>
-          <Route exact path="/ChatLanding/:email/chats" component={Mobilechatroom}></Route>
+          <Route exact path="/ChatLanding/:email/chats" component={Mobilechat}></Route>
           <Route
 
             path="/ChatLanding/:email"

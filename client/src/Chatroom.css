@@ -1,21 +1,34 @@
-#msgside{
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow-x: hidden;
-    overflow-y: scroll;
+#msgside {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
-#inpbox{
+#inpbox {
+  width: 90%;
+
+  border-radius: 8px;
+  border-style: solid;
+  /* border-width: 2px; */
+  padding: 5px;
+}
+.chatdiv {
+  margin-left: 1rem;
+  margin-right: 1rem;
+  margin-top: 1rem;
+}
+#senddiv {
+  bottom: 1rem;
+}
+.sendbtn{
+  margin-left: 0.3rem;
+  font-size: 1.5rem;
+}
+@media (max-width: 576px) {
+  #senddiv {
+    position: fixed;
     width: 90%;
-   
-    border-radius: 8px;
-    border-style: solid;
-    /* border-width: 2px; */
-    padding: 5px
-}
-.chatdiv{
-    margin-left: 1rem;
-    margin-right: 1rem;
-    margin-top: 1rem;
+  }
 }

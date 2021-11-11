@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import { useHistory } from "react-router-dom";
 
-import { faArrowLeft, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faEllipsisV, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 
 function Chatroom({ socket, email, recent2, setrecent,invite }) {
   const history = useHistory();
@@ -222,9 +222,10 @@ console.log(invite)
           }
         })}
       </div>
-      <div style={{ position: "sticky", bottom: 10 }}>
+      <div  >
         <input value={msg} onChange={setmymsg} id="inpbox"></input>
-        <button onClick={sendmsg}>Send</button>
+        
+        <FontAwesomeIcon icon={faPaperPlane} onClick={sendmsg}></FontAwesomeIcon>
       </div>
     </div>
   );

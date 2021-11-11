@@ -10,3 +10,17 @@
     box-shadow: 24;
     padding: 2rem;
 }
+.plusbutton{
+    color: green;
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    /* size: 3rem; */
+    font-size: 2.5rem !important;
+}
+.mob-rheader{
+    margin-left: 2rem;
+}
+.mob-top{
+    padding-top: 1rem;
+}
