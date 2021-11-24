@@ -7,17 +7,16 @@
   overflow-y: scroll;
 }
 #inpbox {
-  width: 90%;
+  width: 80vw;
 
-  border-radius: 8px;
+  border-radius: 1rem;
   border-style: solid;
   /* border-width: 2px; */
   padding: 5px;
 }
 .chatdiv {
-  margin-left: 1rem;
-  margin-right: 1rem;
-  margin-top: 1rem;
+  
+  align-items: center;
 }
 #senddiv {
   bottom: 1rem;
@@ -25,10 +24,30 @@
 .sendbtn{
   margin-left: 0.3rem;
   font-size: 1.5rem;
+  
+}
+.Scrolltop-Username{
+  color: blue;
+    margin-bottom: 0;
+    margin-left: 0;
+    font-size: 0.9rem;
 }
 @media (max-width: 576px) {
   #senddiv {
     position: fixed;
     width: 90%;
+  }
+ 
+}
+@media (max-width:805px) and (min-width:599px){
+  #inpbox{
+    padding: 1rem;
+    font-size: 1.35rem;
+  }
+  .sendbtn{
+    font-size: 2.8rem
+  }
+  .Mobchatroom-msgs{
+    font-size: 1.5rem;
   }
 }

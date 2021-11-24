@@ -20,7 +20,7 @@ function PrivateRoute() {
   return (
     <div>
       {isDesktop && (window.innerWidth > window.innerHeight) ? (
-        <ChatLanding email={email}></ChatLanding>
+        <ChatLanding email={email} ></ChatLanding>
       ) : (
         <MobileLanding email={email}></MobileLanding>
       )}

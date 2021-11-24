@@ -48,11 +48,13 @@ app.get("/", (req, res) => {
 
 let connection = async (itm) => {
   try {
-    let data = await Room.find({ invitecode: itm.invitecode }).exec();
-   // console.log("data" + JSON.stringify(data));
-    itm.members = data[0].members;
-    const chat = new Chat(itm);
-    await chat.save();
+    let room = await Room.find({ invitecode: itm.invitecode }).exec();
+    // console.log("data" + JSON.stringify(data));
+    room[0].chat = [...room[0].chat, itm];
+    room[0].time = itm.time;
+    //itm.roomno=data[0].roomno
+    //const chat = new Chat(itm);
+    await room[0].save();
   } catch (e) {
     console.log(e);
   }
@@ -92,7 +94,7 @@ app.post("/latest",(req, res) => {
 let senddata = async (data1) => {
   let result = [];
   try {
-    result = await Chat.find(
+    result = await Room.find(
       //{ $and: [  {sender:{$eq:data2} }, { roomno:{$eq:data1} }  ] }
       {
         invitecode: { $eq: data1 },
@@ -171,15 +173,15 @@ app.post("/roomcreate", (req, res) => {
   let roomdata = async (itm) => {
     itm.admin = itm.members;
     itm.invitecode = uuidv1().split("-")[0];
-  
+
     let room = new Room(itm);
     await room.save();
-    res.send({invitecode:itm.invitecode})
+    res.send({ invitecode: itm.invitecode });
   };
   try {
-    console.log(req.body)
+    console.log(req.body);
 
-    roomdata(req.body)
+    roomdata(req.body);
   } catch (err) {
     res.status(500).send("room cant be created");
   }
@@ -192,7 +194,7 @@ app.post("/roomjoin", (req, res) => {
     let room = await Room.find({ invitecode: itm.invite }).exec();
 
     if (room.length !== 0) {
-      if (room[0].members.includes(itm.members)===false) {
+      if (room[0].members.includes(itm.members) === false) {
         room[0].members = [...room[0].members, itm.members];
         await room[0].save();
       }
@@ -211,49 +213,46 @@ let recents = async ({ email }) => {
   try {
     //let user=await User.find({email:email})
     let roomarray = await Room.find({ members: email });
-
-    let roomnos = roomarray.map((itm) => itm.roomno);
-    console.log("rnos" + JSON.stringify(roomnos));
-    console.log("type");
-    console.log(roomnos);
-    result = await Chat.aggregate([
-      {
-        '$unionWith': {
-          'coll': 'rooms'
-        }
-      }, {
-        '$match': {
-          '$expr': {
-            '$in': [
-             `$roomno`, roomnos,
-            ]
+    if (roomarray.length !== 0) {
+      let roomnos = roomarray.map((itm) => itm.roomno);
+      console.log("rnos" + JSON.stringify(roomnos));
+      console.log("type");
+      console.log(roomnos);
+      result = await Room.aggregate(
+        [
+          {
+            '$match': {
+              '$expr': {
+                '$in': [
+                  '$roomno', roomnos
+                ]
+              }
+            }
+          }, {
+            '$sort': {
+              'time': -1
+            }
           }
-        }
-      }, {
-        '$group': {
-          '_id': {
-            'invitecode': '$invitecode', 
-            'roomno': '$roomno'
-          }, 
-          'lastchat': {
-            '$max': '$time'
-          }
-        }
-      }, {
-        '$sort': {
-          'lastchat': -1
-        }
-      }
-    ])
+        ]
+      );
+      console.log("result" + JSON.stringify(result));
+      //return lastchatarray;
+      //let times = result.map((itm) => itm.lastchat);
+      //let lastchatarray = await Chat.find({ time: times }).populate('roomno');
+      //let latestroom = await Room.find({ time: times });
 
-    console.log("result" + JSON.stringify(result));
-    return result;
-    //console.log(result[1].msgs);
-    //return result;
+      //console.log("sortedlist" + JSON.stringify(lastchatarray));
+      return result;
+      //console.log(result[1].msgs);
+      //return result;
+    } else {
+      return [];
+    }
   } catch (er) {
     console.log(er);
   }
 };
+
 //obtaining last chat of each grp and sort  them to a array in descending order of time and send response array back
 /*let sendata = async (rno, email) => {
   try {
@@ -349,12 +348,21 @@ app.post("/recents", auth, (req, res) => {
   });*/
   recents(req.body).then((data) => res.json(data));
 });
+//upload pic
+app.post("/roompic", async (req, res) => {
+  let { invite, url } = req.body;
 
+  let targroom = await Room.find({ invitecode: invite });
+
+  targroom[0].roompic = url;
+  await targroom[0].save();
+  res.json({ msg: "pic updated" });
+});
 //leave room
 app.post("/leave", (req, res) => {
   let find = async () => {
     try {
-      let targetRoom = await Room.find({ invitecode: req.body.invitecode});
+      let targetRoom = await Room.find({ invitecode: req.body.invitecode });
       targetRoom[0].members = targetRoom[0].members.filter(
         (itm) => itm != req.body.email
       );
@@ -413,12 +421,11 @@ io.on("connection", (socket) => {
           roomcode = [...roomcode, obj.invitecode];
         }
 
-       
         if (roomarray.length !== 0) {
           //console.log("rarray reached")
           //console.log(roomnos)
           socket.join(roomcode);
-          console.log("joined rooms"+JSON.stringify(roomcode))
+          console.log("joined rooms" + JSON.stringify(roomcode));
         }
       } catch (err) {
         console.log(err);
@@ -431,7 +438,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send", (data) => {
-    console.log("sended"+JSON.stringify(data))
+    console.log("sended" + JSON.stringify(data));
     io.in(data.invitecode).emit("text", data);
   });
 

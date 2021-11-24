@@ -1,13 +1,14 @@
 import { React, useState, useEffect, useRef } from "react";
 import {
   Route,
-  Switch,
-  BrowserRouter as Router,
-  useHistory,
-  useRouteMatch,
+  Routes,
+  //BrowserRouter as Router,
+  useNavigate,
+  
 } from "react-router-dom";
-import Dummy from "./assets/dummyimage.jpg"
-import Chatroom from "./Chatroom";
+import IconButton from "@mui/material/IconButton";
+import Dummy from "./assets/dummyimage.jpg";
+//import Chatroom from "./Chatroom";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import querystring from "query-string";
@@ -17,61 +18,30 @@ import Modal from "@mui/material/Modal";
 import { Grid, Box, Button } from "@mui/material";
 import "./MobileLanding.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { faTrash, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+
 import "./ChatLanding.css";
+import Popover from "@mui/material/Popover";
+import EventModal from "./Components/EventModal";
+
 function MobileLanding({ email }) {
   const [roomno, setroomno] = useState("");
-  const { path, url } = useRouteMatch();
+  //const { path, url } = useRouteMatch();
   const [val, setval] = useState([]);
   const [recent, setrecent] = useState("");
   const [sortarr, setsortarr] = useState([]);
   const [refresh, setrefresh] = useState("");
   const [invite, setinvite] = useState("");
   const socket = useRef();
-  const history = useHistory();
+  const navigate= useNavigate();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
-  const [open, setOpen] = useState(false);
+  const [Open, setOpen] = useState(false);
   const [cp, setcp] = useState("");
   const [rno, setrno] = useState("");
-
+  const [mode, setmode] = useState();
   const handleClose = () => setOpen(false);
-  let submit = async () => {
-    let res = {};
-    try {
-      res = await axios.post("http://localhost:5000/roomjoin", {
-        invite: invite,
-        members: email,
-      });
-      //setrecent(res.data);
-
-      initialfetch();
-
-      socket.current.emit("join", { no: res.data, email: email });
-      setinvite(" ");
-      console.log(res.data);
-    } catch (err) {
-      alert(err.response.data);
-    }
-    //if such a username already exists deal with it later
-  };
-
-  let createRoom = async () => {
-    try {
-      let res = await axios.post("http://localhost:5000/roomcreate", {
-        roomno: roomno,
-        members: email,
-        time: new Date().getTime(),
-      });
-      setOpen(false);
-      initialfetch();
-
-      socket.current.emit("join", { no: res.data.invitecode, email: email });
-    } catch (err) {
-      alert(err.response.data);
-    }
-  };
+  const [anchorEl, setAnchorEl] = useState(null);
 
   let invitechange = (e) => {
     setinvite(e.target.value);
@@ -84,7 +54,7 @@ function MobileLanding({ email }) {
     if (localStorage.getItem(`loggedin${email}`) == "false") {
       console.log("reached back");
 
-      history.goBack();
+     navigate(-1);
     } else {
       console.log("reached load fetch");
       initialfetch();
@@ -110,6 +80,10 @@ function MobileLanding({ email }) {
       console.log("socket closed mland");
     };
   }, []); //TODO: reinitialize socket on user change
+
+  const handleclose = () => {
+    setAnchorEl(null);
+  };
 
   let initialfetch = async () => {
     console.log("initial fetched");
@@ -138,71 +112,122 @@ function MobileLanding({ email }) {
       if (axios.isCancel(err)) {
         console.log(err);
       } else {
-        history.goBack();
+        navigate(-1)
       }
     }
   };
-  console.log(path);
-  let clickrecents = (e) => {
-    setcp(e.invitecode);
-    setrno(e.roomno);
+  
+  let clickrecents = (inv,roomno) => {
+    //setcp(e.invitecode);
+    //setrno(e.roomno);
     //console.log(typeof socket.current)
-    let obj = {
-      data: {
-        email: email,
-        cp: e.invitecode,
-        rno: e.roomno,
-        //socket: String(socket.current),
-      },
-    };
+    //console.log(email)
+    /*history.push({
+      pathname: `/chats`,
+      state: {
+        text:"txt"
+        /*data: { 
+          //
+         
+         },
 
-    history.push({ pathname: `${url}/chats`, state: obj });
+        
+
+    });*/
+    navigate(
+       "/chats",
+     // search: '?query=abc',
+     { state: {email: email, cp: inv, rno: roomno,user:localStorage.getItem(`${email}username`)} }
+  );
   };
   console.log(recent);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const open = Boolean(anchorEl);
+  const id = open ? "simple-popover" : undefined;
+
+  let joinclick = () => {
+    setmode("join");
+    setOpen(true);
+
+    handleclose();
+  };
+  let createclick = () => {
+    setmode("create");
+    setOpen(true);
+
+    handleclose();
+  };
+
+  let eventprops = {
+    mode: mode,
+    roomno: roomno,
+    setroomno: setroomno,
+    invite: invite,
+    invitechange: invitechange,
+    initialfetch: initialfetch,
+    email: email,
+    setinvite: setinvite,
+    socket: socket,
+    Open: Open,
+    setOpen: setOpen,
+    //create:createRoom,
+    //sub:submit,
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }} className="mob-top">
       <Grid container spacing={2}>
         <Grid item xs={12} style={{ overflowY: "scroll", minHeight: "100vh" }}>
-          
-          <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Box id="mdlstyle">
-              <Typography id="modal-modal-title" variant="h6" component="h2">
-                Text in a modal
-              </Typography>
-              <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                <input
-                  value={roomno}
-                  onChange={(e) => setroomno(e.target.value)}
-                ></input>
-                <button onClick={createRoom}>Create</button>
-              </Typography>
-            </Box>
-          </Modal>
-<Box className="mob-top">
-          {val.map((itm, index) => {
-            return (
-              <div
-                key={index}
-                id="roomnames"
-                onClick={() => clickrecents(itm._id)}
-                className="d-flex  align-items-center"
-              >
-                <img src={Dummy} alt="img" className="dummyimg"></img>
-                <p className="dummyimgtxt">{itm._id.roomno}</p>
-              </div>
-            );
-          })}
+          <Box className="ChatLanding-popicon">
+            <IconButton onClick={handleClick}>
+              <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
+            </IconButton>
           </Box>
-          <AddCircleIcon
-            className="plusbutton"
-            onClick={() => setOpen(true)}
-          ></AddCircleIcon>
+          <Popover
+            id={id}
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handleclose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+          >
+            <Typography sx={{ p: 2 }} component={"div"}>
+              {" "}
+              <ul>
+                <p onClick={joinclick}>Join Room</p>
+                <p onClick={createclick}>Create Room</p>
+              </ul>
+            </Typography>
+          </Popover>
+          {mode !== undefined ? (
+            <EventModal {...eventprops}></EventModal>
+          ) : (
+            <Box></Box>
+          )}
+          <Box className="mob-top">
+            {val.map((itm, index) => {
+              return (
+                <div
+                  key={index}
+                  id="roomnames"
+                  onClick={() => clickrecents(itm.invitecode,itm.roomno)}
+                  className="d-flex  align-items-center"
+                >
+                  <img src={Dummy} alt="img" className="dummyimg"></img>
+                  
+                  <Box>
+                <p className="dummyimgtxt">{itm.roomno}</p>
+                {(itm.msgs) ? (<p className="ChatLanding-mutedtxt">{itm.user}:{itm.msgs}</p>):('')}
+                </Box>
+                </div>
+              );
+            })}
+          </Box>
         </Grid>
       </Grid>
     </Box>

@@ -1,38 +1,30 @@
 import React from "react";
 import "./App.css";
 
-import {
-  
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  
-} from "react-router-dom";
-import Landing from "./Landing";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Signup from "../src/Signup";
 
 import Login from "./Login";
 import PrivateRoute from "./PrivateRoute";
 
-
 import Mobilechat from "./Components/Mobilechat";
 function App() {
-  
-
   return (
     <div className="App">
       <Router>
-        <Switch>
-          <Route exact path="/" component={Landing}></Route>
-          <Route exact path="/ChatLanding/:email/chats" component={Mobilechat}></Route>
+        <Routes>
+        <Route path="/" element={<Login />}></Route>
+          <Route path="/signup" element={<Signup />}></Route>
+          <Route path="/chats" element={<Mobilechat />}></Route>
           <Route
-
             path="/ChatLanding/:email"
-            component={PrivateRoute}
+            //component={PrivateRoute}
+            element={<PrivateRoute />}
           ></Route>
-          <Route exact path="/Login" component={Login}></Route>
-       
-         {/* <Route path="*" ><Redirect to="/Login"></Redirect></Route>*/}
-        </Switch>
+          <Route exact path="/Login" element={<Login />}></Route>
+
+          {/* <Route path="*" ><Redirect to="/Login"></Redirect></Route>*/}
+        </Routes>
       </Router>
     </div>
   );

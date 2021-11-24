@@ -8,9 +8,9 @@ import Box from "@mui/material/Box";
 
 import Typography from "@mui/material/Typography";
 import {io} from 'socket.io-client'
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowAltCircleRight, faArrowLeft, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import { faArrowAltCircleRight, faArrowLeft, faEllipsisV,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 
 import Toolbar from "@mui/material/Toolbar";
 
@@ -18,9 +18,10 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 
 function Mobilechatroom({ location}) {
-  const history = useHistory();
+  const navigate = useNavigate();
   //let { obj }=useParams()
-  let { rno, email, cp } = location.state.data;
+  console.log(location)
+  let { rno, email, cp,user } = location.state;
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -33,6 +34,7 @@ function Mobilechatroom({ location}) {
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
+        user:user,
         sender: email,
         msgs: msg,
         roomno: rno,
@@ -64,7 +66,7 @@ function Mobilechatroom({ location}) {
   const updateMedia = () => {
     console.log("reached resize");
     if (window.innerWidth > 576) {
-      history.goBack();
+      navigate(-1);
     }
   };
 
@@ -80,7 +82,7 @@ function Mobilechatroom({ location}) {
           email: email,
         },
       });
-      history.goBack();
+    navigate(-1);
     } catch (err) {
       alert(err.response.data.msg);
       console.log(err.response.data);
@@ -137,7 +139,7 @@ function Mobilechatroom({ location}) {
     if (res.data == "good") {
       console.log(res.data);
       console.log(res.data == "good");
-      history.goBack();
+      navigate(-1);
     }
   };
   
@@ -149,23 +151,26 @@ function Mobilechatroom({ location}) {
         {recieved.map((msg, index) => {
           if (msg.sender === email) {
             return (
-              <p
+              <div
                 key={index}
+                className="Mobchatroom-msgs"
                 style={{
                   alignSelf: "flex-end",
-                  backgroundColor: "#931bf5",
+                  //backgroundColor: "#931bf5",
+                  backgroundColor:"#629dfc",
                   color: "white",
                   padding: 10,
                   borderRadius: 8,
                 }}
               >
                 {msg.msgs}
-              </p>
+              </div>
             );
           } else {
             return (
-              <p
+              <div
                 key={index}
+                className="Mobchatroom-msgs"
                 style={{
                   alignSelf: "flex-start",
                   backgroundColor: "#f3f0f5",
@@ -173,15 +178,27 @@ function Mobilechatroom({ location}) {
                   borderRadius: 8,
                 }}
               >
-                {msg.msgs}
-              </p>
+                 <p className="Scrolltop-Username">{msg.user}</p>
+                <p>{msg.msgs}</p>
+              </div>
             );
           }
         })}
-         <div style={{ position: "fixed"}} id="senddiv">
+         <div  style={{
+              position: "fixed",
+              bottom: 10,
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+            }} id="senddiv">
         <input value={msg} onChange={setmymsg} id="inpbox"></input>
         
-        <FontAwesomeIcon icon={faArrowAltCircleRight} onClick={sendmsg}></FontAwesomeIcon>
+        
+        <FontAwesomeIcon
+              icon={faPaperPlane}
+              onClick={sendmsg}
+              className="sendbtn"
+            ></FontAwesomeIcon>
       </div>
       </div>
      

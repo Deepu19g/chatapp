@@ -8,7 +8,7 @@ import Popover from "@mui/material/Popover";
 import Typography from "@mui/material/Typography";
 import CssBaseline from "@mui/material/CssBaseline";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Fab from "@mui/material/Fab";
@@ -17,6 +17,8 @@ import Zoom from "@mui/material/Zoom";
 import Mobilechatroom from "../Mobilechatroom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowAltCircleUp,faEllipsisV,faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { useLocation } from "react-router-dom";
+
 function ScrollTop(props) {
   const { children, window } = props;
   // Note that you normally won't need to set the window ref as useScrollTrigger
@@ -67,10 +69,13 @@ ScrollTop.propTypes = {
 
 
 
-export default function Mobilechat(props) {
-  console.log(props.location);
-  let {email,cp}=props.location.state.data
-  const history = useHistory();
+export default function Mobilechat() {
+  const location = useLocation();
+  console.log(location);
+   const navigate = useNavigate();
+  //console.log(history.location.state)
+  let {email,cp,rno}=location.state
+  
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
  
@@ -95,7 +100,7 @@ export default function Mobilechat(props) {
       email: email,
      invitecode:cp,
     });
-    history.goBack()
+navigate(-1)
     
     
   };
@@ -111,7 +116,7 @@ export default function Mobilechat(props) {
         },
       });
       
-      history.goBack()
+      navigate(-1)
     } catch (err) {
       if (err.response) {
         alert(err.response.data.msg);
@@ -124,7 +129,7 @@ export default function Mobilechat(props) {
   return (
     <React.Fragment>
       <CssBaseline />
-      <AppBar style={{ backgroundColor: "orange" }}>
+      <AppBar style={{ backgroundColor: "#23a0e8" }}>
         <Toolbar>
           <IconButton
             size="large"
@@ -132,12 +137,12 @@ export default function Mobilechat(props) {
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
-            onClick={() => history.goBack()}
+            onClick={() => navigate(-1)}
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {props.location.state.data.rno}
+            <p className="Mobchatroom-msgs" style={{marginBottom:"0"}}>{rno}</p>
           </Typography>
           <IconButton onClick={handleClick2}>
             <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
@@ -165,10 +170,10 @@ export default function Mobilechat(props) {
       <Toolbar id="back-to-top-anchor" />
       <Container>
         <Box sx={{ my: 2 }}>
-        <Mobilechatroom location={props.location} ></Mobilechatroom>
+        <Mobilechatroom location={location} ></Mobilechatroom>
         </Box>
       </Container>
-      <ScrollTop {...props}>
+      <ScrollTop >
         <Fab color="secondary" size="small" aria-label="scroll back to top">
           <FontAwesomeIcon icon={faArrowAltCircleUp}></FontAwesomeIcon>
         </Fab>

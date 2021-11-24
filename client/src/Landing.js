@@ -5,7 +5,7 @@ import {
   BrowserRouter as Router,
   Switch,
   Route,
-  useHistory,
+  useNavigate,
 } from "react-router-dom";
 import ChatLanding from "./ChatLanding";
 //username already taken scenario check
@@ -15,7 +15,7 @@ function Landing() {
   const [email, setemail] = useState();
   const [warn, setwarn] = useState(false);
   const [auth,setauth] = useState(true)
-  const history = useHistory();
+  const navigate = useNavigate();
   const handlenamechange = (e) => {
     setusername(e.target.value);
   };
@@ -37,7 +37,7 @@ function Landing() {
           localStorage.setItem(`jwt${email}`,`${res.data}`)
           console.log("fresh data");
           //getauth(true);
-          history.push(`/ChatLanding/${email}`);
+          navigate(`/ChatLanding/${email}`);
         
         
       //setstatus(true)

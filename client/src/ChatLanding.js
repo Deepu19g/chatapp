@@ -1,5 +1,5 @@
 import { React, useState, useEffect, useRef, useCallback } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Popover from "@mui/material/Popover";
 import Typography from "@mui/material/Typography";
 import { io } from "socket.io-client";
@@ -14,6 +14,8 @@ import BackToTop from "./ScrollTop";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Dummy from "./assets/dummyimage.jpg";
 import EventModal from "./Components/EventModal";
+import {Image} from 'cloudinary-react';
+
 function ChatLanding({ email }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [roomno, setroomno] = useState("");
@@ -25,21 +27,19 @@ function ChatLanding({ email }) {
   const [mode, setmode] = useState();
   const [cp, setcp] = useState("");
   const socket = useRef();
-  const history = useHistory();
+  const navigate = useNavigate();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
-  
+//const [dp,setdp] = useState(" ")
   const [Open, setOpen] = useState(false);
 
-  
-  
   /*const roomnochange = (e) => {
     setroomno(e.target.value);
   };*/
 
   useEffect(() => {
     if (localStorage.getItem(`loggedin${email}`) == "false") {
-      history.goBack();
+      navigate(-1);
     } else {
       initialfetch();
     }
@@ -50,7 +50,8 @@ function ChatLanding({ email }) {
   useEffect(() => {
     socket.current = io("ws://localhost:5000");
     socket.current.on("text", (data) => {
-      console.log("broadcast msg receieved");
+      //console.log("broadcast msg receieved");
+      //setval()
       initialfetch();
     });
     socket.current.on("deleted", () => {
@@ -65,9 +66,10 @@ function ChatLanding({ email }) {
     };
   }, []); //TODO: reinitialize socket on user change
 
+  
   let initialfetch = async () => {
     let jwtoken = localStorage.getItem(`jwt${email}`);
-
+console.log(jwtoken)
     let config = {
       headers: {
         Authorization: "Bearer" + " " + jwtoken,
@@ -75,7 +77,7 @@ function ChatLanding({ email }) {
       cancelToken: source.token,
     };
     try {
-      const res = await axios
+      let res = await axios
         .post(
           "http://localhost:5000/recents",
           {
@@ -91,17 +93,17 @@ function ChatLanding({ email }) {
       if (axios.isCancel(err)) {
         console.log(err);
       } else {
-        history.goBack();
+        console.log(err)
+      navigate(-1);
       }
-      //console.log(err)
+      //
     }
   };
 
-  const clickrecents = (e) => {
+  const clickrecents = (invite, roomno) => {
     //setrecent(e.currentTarget.textContent);
-    setcp(e.invitecode);
-    setrno(e.roomno);
-    console.log(e);
+    setcp(invite);
+    setrno(roomno);
   };
 
   let invitechange = (e) => {
@@ -123,29 +125,29 @@ function ChatLanding({ email }) {
     roomno: roomno,
     setroomno: setroomno,
     invite: invite,
-    invitechange:  invitechange ,
-    initialfetch:initialfetch,
-    email:email,
-    setinvite:setinvite,
-    socket:socket,
-    Open:Open,
-  setOpen:setOpen,
+    invitechange: invitechange,
+    initialfetch: initialfetch,
+    email: email,
+    setinvite: setinvite,
+    socket: socket,
+    Open: Open,
+    setOpen: setOpen,
     //create:createRoom,
     //sub:submit,
-   
   };
-  let joinclick=()=>{
-    setmode("join")
-    setOpen(true)
-    
-    handleclose()
-  }
-  let createclick=()=>{
-    setmode("create")
-    setOpen(true)
-    
-    handleclose()
-  }
+  let joinclick = () => {
+    setmode("join");
+    setOpen(true);
+
+    handleclose();
+  };
+  let createclick = () => {
+    setmode("create");
+    setOpen(true);
+
+    handleclose();
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={2}>
@@ -189,20 +191,35 @@ function ChatLanding({ email }) {
               <ul>
                 <p onClick={joinclick}>Join Room</p>
                 <p onClick={createclick}>Create Room</p>
+                
               </ul>
             </Typography>
           </Popover>
-         {(mode!==undefined) ? <EventModal {...eventprops}></EventModal>:<Box></Box>} 
+          {mode !== undefined ? (
+            <EventModal {...eventprops}></EventModal>
+          ) : (
+            <Box></Box>
+          )}
           {val.map((itm, index) => {
+           // console.log(itm.chat.at(-1).userName)
             return (
               <div
                 key={index}
                 id="roomnames"
-                onClick={() => clickrecents(itm._id)}
+                onClick={() => clickrecents(itm.invitecode, itm.roomno)}
                 className="d-flex align-items-center"
               >
-                <img src={Dummy} alt="img" className="dummyimg"></img>
-                <p className="dummyimgtxt">{itm._id.roomno}</p>
+                <img src={(itm.roompic!==undefined) ? itm.roompic:Dummy} alt="img" className="dummyimg"></img>
+                <Box>
+                  <p className="dummyimgtxt">{itm.roomno}</p>
+                  {(itm.chat.at(-1)!==undefined )? (
+                    <p className="ChatLanding-mutedtxt">
+                      {itm.chat.at(-1).userName}:{itm.chat.at(-1).msgs}
+                    </p>
+                  ) : (
+                    ""
+                  )}
+                </Box>
               </div>
             );
           })}
@@ -218,6 +235,7 @@ function ChatLanding({ email }) {
             <BackToTop
               socket={socket.current}
               cp={cp}
+              //user={user}
               email={email}
               setcp={setcp}
               initialfetch={initialfetch}

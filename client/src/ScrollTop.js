@@ -14,7 +14,7 @@ import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Fab from "@mui/material/Fab";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   faArrowAltCircleUp,
@@ -74,25 +74,28 @@ Top.propTypes = {
 
 export default function BackToTop(props) {
   const { socket, email, cp, rno, setcp, initialfetch } = props;
-  const history = useHistory();
-
+  const navigate = useNavigate();
+const [roompic,setroompic] = useState()
   const [anchorEl, setAnchorEl] = useState(null);
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
 
   //const [subrecent,setsubrecent] = useState(recent2)
   const sendmsg = async () => {
+    let userName=localStorage.getItem(`${email}username`)
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
+        userName:userName,
+
         sender: email,
         msgs: msg,
-        roomno: rno,
+          //roomno: rno,
         invitecode: cp,
         time: new Date().getTime(),
       });
-      console.log("after posting chat");
-      socket.emit("send", { msgs: msg, sender: email, invitecode: cp });
+      //console.log("after posting chat");
+      socket.emit("send", { msgs: msg, sender: email, invitecode: cp ,userName:userName});
     } catch (e) {
       console.log(e);
     }
@@ -103,27 +106,31 @@ export default function BackToTop(props) {
 
   const setmymsg = (e) => setmsg(e.target.value);
   //console.log(username);
-  console.log(cp);
+
   useEffect(() => {
     //socket.current.emit()
-    console.log("initialised socket");
-    const roomsocket = socket.on("text", (data) => {
-      console.log(data.msgs);
-
+    //console.log("initialised socket");
+    let roomsocket = (data) => {
+      console.log(data);
+      console.log(cp);
       if (data.invitecode === cp) {
         console.log("yeah matched");
 
         setrecieved((prev) => [...prev, data]);
       }
-    });
-    return () => socket.off("text", roomsocket);
+    };
+    socket.on("text", roomsocket);
+    return () => {
+      console.log("cleaned");
+      socket.off("text", roomsocket);
+    };
   }, [cp]);
 
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
       //setrecieved([]);
-      console.log("initialdata called");
+      console.log(cp);
       //console.log(recent2);
       try {
         let status = await axios.post("http://localhost:5000/data", {
@@ -132,7 +139,7 @@ export default function BackToTop(props) {
         //.then((res) => res.data);
         //console.log(recent2);
         console.log(status);
-        setrecieved(status.data);
+        setrecieved(status.data[0].chat);
       } catch (err) {
         console.log(err);
       }
@@ -203,6 +210,23 @@ export default function BackToTop(props) {
     setAnchorEl(null);
   };
 
+  let picupload = async (e) => {
+    
+    let files = e.target.files;
+   
+    if (files[0] !== undefined) {
+      let fdata = new FormData();
+      fdata.append("file", files[0]);
+      fdata.append("upload_preset",  "nvjz6yfm");
+      let imgresult = await axios.post(
+        "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
+        fdata
+      );
+      
+     await axios.post("http://localhost:5000/roompic",{url:imgresult.data.secure_url,invite:cp,email:email})
+    }
+  };
+
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
   return (
@@ -220,6 +244,9 @@ export default function BackToTop(props) {
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
           </IconButton>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {rno}
+          </Typography>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {rno}
           </Typography>
@@ -242,6 +269,11 @@ export default function BackToTop(props) {
               <ul>
                 <p onClick={leaveRoom}>Leave Room</p>
                 <p onClick={handledel}>Delete Room</p>
+                <input
+                  type="file"
+                  className="custom-file-input"
+                  onChange={picupload}
+                ></input>
               </ul>
             </Typography>
           </Popover>
@@ -254,22 +286,24 @@ export default function BackToTop(props) {
             {recieved.map((msg, index) => {
               if (msg.sender === email) {
                 return (
-                  <p
+                  <div
                     key={index}
                     style={{
                       alignSelf: "flex-end",
-                      backgroundColor: "#931bf5",
+                      //backgroundColor: "#931bf5",
+                      backgroundColor: "#629dfc",
                       color: "white",
                       padding: 10,
                       borderRadius: 8,
                     }}
                   >
-                    {msg.msgs}
-                  </p>
+                    
+                    <p>{msg.msgs}</p>
+                  </div>
                 );
               } else {
                 return (
-                  <p
+                  <div
                     key={index}
                     style={{
                       alignSelf: "flex-start",
@@ -278,8 +312,9 @@ export default function BackToTop(props) {
                       borderRadius: 8,
                     }}
                   >
-                    {msg.msgs}
-                  </p>
+                    <p className="Scrolltop-Username">{msg.user}</p>
+                    <p>{msg.msgs}</p>
+                  </div>
                 );
               }
             })}
