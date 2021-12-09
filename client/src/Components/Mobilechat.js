@@ -1,4 +1,4 @@
-import  React,{useState,useRef,useEffect} from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./MobileChat.css";
 import axios from "axios";
 import PropTypes from "prop-types";
@@ -16,8 +16,13 @@ import IconButton from "@mui/material/IconButton";
 import Zoom from "@mui/material/Zoom";
 import Mobilechatroom from "../Mobilechatroom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowAltCircleUp,faEllipsisV,faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowAltCircleUp,
+  faEllipsisV,
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
 import { useLocation } from "react-router-dom";
+import Dummy from "../assets/dummyimage.jpg";
 
 function ScrollTop(props) {
   const { children, window } = props;
@@ -43,7 +48,6 @@ function ScrollTop(props) {
     }
   };
 
-  
   return (
     <Zoom in={trigger}>
       <Box
@@ -66,19 +70,17 @@ ScrollTop.propTypes = {
   window: PropTypes.func,
 };
 
-
-
-
 export default function Mobilechat() {
   const location = useLocation();
   console.log(location);
-   const navigate = useNavigate();
-  //console.log(history.location.state)
-  let {email,cp,rno}=location.state
-  
+  const navigate = useNavigate();
+
+  let { email, cp, rno, roomdp } = location.state;
+
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
- 
+  const [roompic, setroompic] = useState(roomdp);
+  const [mode,setmode] = useState(" ")
   const toggle = () => setPopoverOpen(!popoverOpen);
   const handleClick2 = (event) => {
     setAnchorEl(event.currentTarget);
@@ -88,21 +90,15 @@ export default function Mobilechat() {
     setAnchorEl(null);
   };
 
-
   const open = Boolean(anchorEl);
-  const id = open ? 'simple-popover' : undefined;
-
-  
-
+  const id = open ? "simple-popover" : undefined;
 
   let leaveRoom = async () => {
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
-     invitecode:cp,
+      invitecode: cp,
     });
-navigate(-1)
-    
-    
+    navigate(-1);
   };
 
   let handledel = async () => {
@@ -115,8 +111,8 @@ navigate(-1)
           email: email,
         },
       });
-      
-      navigate(-1)
+
+      navigate(-1);
     } catch (err) {
       if (err.response) {
         alert(err.response.data.msg);
@@ -126,10 +122,43 @@ navigate(-1)
     }
   };
 
+  let picupload = async (e) => {
+    handleClose();
+    let files = e.target.files;
+
+    if (files[0] !== undefined) {
+      let fdata = new FormData();
+      fdata.append("file", files[0]);
+      fdata.append("upload_preset", "nvjz6yfm");
+      let imgresult = await axios.post(
+        "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
+        fdata
+      );
+
+      await axios.post("http://localhost:5000/roompic", {
+        url: imgresult.data.secure_url,
+        invite: cp,
+        email: email,
+      });
+      setroompic(imgresult.data.secure_url);
+    }
+  };
+
+  let addmember = async () => {
+    try{
+    await axios.post("http://localhost:5000/addmember", {
+      invitecode: cp,
+      
+    });
+    setmode("addmem")
+  }catch(err){
+    console.log(err)
+  }
+  };
   return (
     <React.Fragment>
       <CssBaseline />
-      <AppBar style={{ backgroundColor: "#23a0e8" }}>
+      <AppBar style={{ backgroundColor: "#23a0e8" }} className="Mobchat-nav">
         <Toolbar>
           <IconButton
             size="large"
@@ -138,15 +167,41 @@ navigate(-1)
             aria-label="menu"
             sx={{ mr: 2 }}
             onClick={() => navigate(-1)}
+            style={{ marginRight: "0" }}
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <p className="Mobchatroom-msgs" style={{marginBottom:"0"}}>{rno}</p>
-          </Typography>
-          <IconButton onClick={handleClick2}>
-            <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
-          </IconButton>
+          <Box className="d-flex justify-content-between" style={{ flex: "1" }}>
+            <Box className="d-flex">
+              <Typography variant="h6" component="div">
+                {console.log(roompic)}
+                <img
+                  src={roompic !== undefined ? roompic : Dummy}
+                  //alt="txt"
+                  className="dummyimg-mob"
+                  style={{ marginTop: "0" }}
+                ></img>
+              </Typography>
+              <Typography
+                variant="h6"
+                component="div"
+                className="ScrollTop-header-roomno"
+              >
+                {rno}
+              </Typography>
+            </Box>
+            <Box>
+              <IconButton onClick={handleClick2} style={{ marginRight: "0" }}>
+                <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
+              </IconButton>
+            </Box>
+          </Box>
+          {/*<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <p className="Mobchatroom-msgs" style={{ marginBottom: "0" }}>
+              {rno}
+            </p>
+            </Typography>*/}
+
           <Popover
             id={id}
             open={open}
@@ -158,10 +213,15 @@ navigate(-1)
             }}
           >
             <Typography sx={{ p: 2 }} component={"div"}>
-              
               <ul id="popul">
                 <p onClick={leaveRoom}>Leave Room</p>
                 <p onClick={handledel}>Delete Room</p>
+                <p onClick={addmember}>Add member</p>
+                <input
+                  type="file"
+                  className="custom-file-input"
+                  onChange={picupload}
+                ></input>
               </ul>
             </Typography>
           </Popover>
@@ -170,10 +230,10 @@ navigate(-1)
       <Toolbar id="back-to-top-anchor" />
       <Container>
         <Box sx={{ my: 2 }}>
-        <Mobilechatroom location={location} ></Mobilechatroom>
+          <Mobilechatroom location={location}></Mobilechatroom>
         </Box>
       </Container>
-      <ScrollTop >
+      <ScrollTop>
         <Fab color="secondary" size="small" aria-label="scroll back to top">
           <FontAwesomeIcon icon={faArrowAltCircleUp}></FontAwesomeIcon>
         </Fab>

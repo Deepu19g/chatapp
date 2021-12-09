@@ -1,24 +1,11 @@
-import { React, useState,useEffect } from "react";
+import { React, useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
-function EventModal({
-  mode,
-  roomno,
-  setroomno,
-  initialfetch,
-  invite,
-  invitechange,
-  email,
-  setinvite,
-  Open,
-  setOpen,
-  socket,
-}) {
+function EventModal({ modtxt, modeval, modefunc, setmodeval, btntxt,Open,setOpen }) {
+  //const [open, setopen] = useState(Open);
   
-
- 
   const style = {
     position: "absolute",
     top: "50%",
@@ -30,44 +17,34 @@ function EventModal({
     boxShadow: 24,
     p: 4,
   };
-  console.log(Open)
-  let submit = async () => {
-    let res = {};
-    try {
-      res = await axios.post("http://localhost:5000/roomjoin", {
-        invite: invite,
-        members: email,
-      });
-      //setrecent(res.data);
-      setOpen(false);
-      initialfetch();
-      socket.current.emit("join", { no: res.data, email: email });
-      setinvite(" ");
-      console.log(res.data);
-    } catch (err) {
-      alert(err.response.data);
-    }
-    //if such a username already exists deal with it later
-  };
+console.log(Open)
+  return (
+    <Box>
+      <Modal
+        open={Open}
+        onClose={()=>setOpen(!Open)}
+        //onClose={console.log("closed")}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            <p>{modtxt}</p>
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            <input
+              value={modeval}
+              onChange={(e) => setmodeval(e.target.value)}
+            ></input>
 
-  let createRoom = async () => {
-    try {
-      let res = await axios.post("http://localhost:5000/roomcreate", {
-        roomno: roomno,
-        members: email,
-        time: new Date().getTime(),
-      });
+            <button onClick={modefunc}>{btntxt}</button>
+          </Typography>
+        </Box>
+      </Modal>
+    </Box>
+  );
 
-      setOpen(false);
-      initialfetch();
-      console.log(res.data.invitecode);
-      socket.current.emit("join", { no: res.data.invitecode, email: email });
-    } catch (err) {
-      alert(err.response.data);
-    }
-  };
-
-  if (mode == "create") {
+  /*if (mode == "create") {
    
     return (
       <Box>
@@ -116,7 +93,9 @@ function EventModal({
         </Modal>
       </Box>
     );
-  } 
+  } else if(mode=="addmem"){
+
+  }*/
 }
 
 export default EventModal;

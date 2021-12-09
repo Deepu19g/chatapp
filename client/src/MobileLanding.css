@@ -24,3 +24,12 @@
 .mob-top{
     padding-top: 1rem;
 }
+
+/*@media (min-width:600px){
+    .ChatLanding-mutedtxt{
+    padding-left: 1rem;
+    font-size: 1.2rem;
+    }
+
+
+}*/

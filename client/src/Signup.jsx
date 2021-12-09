@@ -7,6 +7,8 @@ import "./assets/vendor/select2/select2.min.css";
 import "./assets/vendor/datepicker/daterangepicker.css";
 import "./assets/css/main.css";
 import Lpic from "../src/assets/Landingpic.png";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 function Signup() {
   const [username, setusername] = useState("");
   const [password, setpassword] = useState("");
@@ -41,20 +43,43 @@ function Signup() {
     }
   };
   return (
-    <div className="page-wrapper bg-gra-01 p-t-180 p-b-100 font-poppins">
-      <div className="wrapper wrapper--w780">
-        <div className="card card-3">
-          <div className="card-heading">
+    <Box
+      sx={{ flexGrow: 1 }}
+      className="page-wrapper bg-gra-01 p-t-180 p-b-100 font-poppins"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <Box
+        className="wrapper wrapper--w780"
+        style={{ display: "flex", justifyContent: "center" }}
+      >
+        <Grid container className="card card-3" md={9} sm={9} lg={10}>
+          <Grid item className="card-heading" xs={12} sm={6}>
             <img
-              style={{ height: "100%", width: "100%", objectFit: "contain" }}
+              className="Login-leftimg"
+              //style={{ height: "100%", width: "100%", objectFit: "cover" }}
               src={Lpic}
             />
-          </div>
-          <div className="card-body" style={{ background: "white" }}>
+          </Grid>
+          <Grid
+            item
+            className="card-body"
+            style={{
+              background: "white",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+            xs={12}
+            sm={6}
+          >
             <h2 className="title" style={{ color: "black" }}>
               Registration Info
             </h2>
-            <form method="POST" onSubmit={signup}>
+            <form method="POST" onSubmit={signup} className="Login-form">
               <div className="input-group">
                 <input
                   className="input--style-3 NewLanding-input"
@@ -65,6 +90,7 @@ function Signup() {
                   onChange={handlenamechange}
                 />
               </div>
+
               <div className="input-group">
                 <input
                   type="password"
@@ -87,18 +113,16 @@ function Signup() {
               </div>
 
               <div className="p-t-10">
-               
-                  <button type="submit" className="btn btn--pill btn--green">
-                    Signup
-                  </button>
-                
+                <button type="submit" className="btn btn--pill btn--green">
+                  Signup
+                </button>
               </div>
             </form>
-            {warn ? <p>Email already exists</p> : ""}
-          </div>
-        </div>
-      </div>
-    </div>
+            {warn ? <p>{warn}</p> : ""}
+          </Grid>
+        </Grid>
+      </Box>
+    </Box>
   );
 }
 

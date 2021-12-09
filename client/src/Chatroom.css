@@ -6,8 +6,11 @@
   overflow-x: hidden;
   overflow-y: scroll;
 }
+.Chatroom-chats{
+  margin-bottom: 0.3rem;
+}
 #inpbox {
-  width: 80vw;
+  width: 84vw;
 
   border-radius: 1rem;
   border-style: solid;
@@ -17,6 +20,7 @@
 .chatdiv {
   
   align-items: center;
+  padding-bottom: 2rem;
 }
 #senddiv {
   bottom: 1rem;
@@ -32,6 +36,9 @@
     margin-left: 0;
     font-size: 0.9rem;
 }
+.ScrollTop-header-roomno{
+  margin-left: 0.5rem !important
+}
 @media (max-width: 576px) {
   #senddiv {
     position: fixed;
@@ -40,14 +47,26 @@
  
 }
 @media (max-width:805px) and (min-width:599px){
-  #inpbox{
-    padding: 1rem;
-    font-size: 1.35rem;
-  }
+  
   .sendbtn{
-    font-size: 2.8rem
+    font-size: 2.5rem
   }
   .Mobchatroom-msgs{
     font-size: 1.5rem;
+  }
+  .Chatroom-chats{
+    font-size: 1.5rem ;
+  }
+  .ScrollTop-header-roomno{
+    font-size: 2rem !important;
+  }
+  .chatdiv{
+    margin-top: 2.5rem;
+    padding-bottom: 3.5rem;
+  }
+  #inpbox{
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem
   }
 }

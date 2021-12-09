@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const Chat = require("./Models/Chat");
 const User = require("./Models/User");
 const Room = require("./Models/Room");
+const AdminRoute=require("./Routes/Addadmin")
 const { ObjectId } = require("mongodb");
 const { v1: uuidv1 } = require("uuid");
 require("dotenv").config();
@@ -46,24 +47,41 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
-let connection = async (itm) => {
-  try {
-    let room = await Room.find({ invitecode: itm.invitecode }).exec();
-    // console.log("data" + JSON.stringify(data));
-    room[0].chat = [...room[0].chat, itm];
-    room[0].time = itm.time;
-    //itm.roomno=data[0].roomno
-    //const chat = new Chat(itm);
-    await room[0].save();
-  } catch (e) {
-    console.log(e);
-  }
-};
+
 app.post("/post", (req, res) => {
-  connection(req.body);
-  res.json("good");
+  let connection = async (itm) => {
+    try {
+      let room = await Room.find({ invitecode: itm.invitecode }).exec();
+      // console.log("data" + JSON.stringify(data));
+      room[0].chat = [...room[0].chat, itm];
+      room[0].time = itm.time;
+      //itm.roomno=data[0].roomno
+      //const chat = new Chat(itm);
+      await room[0].save();
+    } catch (e) {
+      console.log(e);
+    }
+  };
+   connection(req.body).then(res.json("good")); 
+  
 });
 
+app.post("/addmember", (req, res) => {
+  let { invitecode, email } = req.body;
+  let addadmin = async () => {
+    //console.log(invitecode)
+    try {
+      let room = await Room.find({ invitecode: invitecode }).exec();
+
+    
+      res.send({members:room[0].members})
+    } catch (err) {
+      console.log(err);
+      res.status(404).send("room not found")
+    }
+  };
+  addadmin();
+});
 //finding lastest chat
 /*let latest=async(data1)=>{
   try {
@@ -110,7 +128,8 @@ let senddata = async (data1) => {
 
 app.post("/data", (req, res) => {
   senddata(req.body.invitecode).then((data) => {
-    //console.log(data)
+    console.log("mssgs")
+    console.log(data)
     res.json(data);
   });
 });
@@ -179,7 +198,7 @@ app.post("/roomcreate", (req, res) => {
     res.send({ invitecode: itm.invitecode });
   };
   try {
-    console.log(req.body);
+   
 
     roomdata(req.body);
   } catch (err) {
@@ -215,9 +234,7 @@ let recents = async ({ email }) => {
     let roomarray = await Room.find({ members: email });
     if (roomarray.length !== 0) {
       let roomnos = roomarray.map((itm) => itm.roomno);
-      console.log("rnos" + JSON.stringify(roomnos));
-      console.log("type");
-      console.log(roomnos);
+      
       result = await Room.aggregate(
         [
           {
@@ -235,7 +252,7 @@ let recents = async ({ email }) => {
           }
         ]
       );
-      console.log("result" + JSON.stringify(result));
+      
       //return lastchatarray;
       //let times = result.map((itm) => itm.lastchat);
       //let lastchatarray = await Chat.find({ time: times }).populate('roomno');
@@ -379,10 +396,9 @@ app.post("/leave", (req, res) => {
 app.delete("/delete", (req, res) => {
   let del = async () => {
     try {
-      console.log("reached back del");
+      
       let room = await Room.findOne({ invitecode: req.body.invitecode });
-      console.log(req.body);
-      console.log(room);
+     
       if (room.admin.includes(req.body.email)) {
         await Room.deleteOne({ invitecode: req.body.invitecode });
         await Chat.deleteOne({ invitecode: req.body.invitecode });
@@ -402,7 +418,7 @@ app.delete("/delete", (req, res) => {
 let roomid = "";
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
-  console.log("connected");
+ 
   /*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
   const changeStream = collection.watch([]);
   changeStream.on('change', (next) => {
@@ -425,7 +441,7 @@ io.on("connection", (socket) => {
           //console.log("rarray reached")
           //console.log(roomnos)
           socket.join(roomcode);
-          console.log("joined rooms" + JSON.stringify(roomcode));
+         // console.log("joined rooms" + JSON.stringify(roomcode));
         }
       } catch (err) {
         console.log(err);
@@ -438,7 +454,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send", (data) => {
-    console.log("sended" + JSON.stringify(data));
+    
     io.in(data.invitecode).emit("text", data);
   });
 

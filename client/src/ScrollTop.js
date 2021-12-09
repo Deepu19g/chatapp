@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Chatroom.css";
 import Popover from "@mui/material/Popover";
+//import Dummy from "./assets/dummyimage.jpg";
+import Dummy from "./assets/dummyimage.jpg";
 import PropTypes from "prop-types";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -72,30 +74,59 @@ Top.propTypes = {
   window: PropTypes.func,
 };
 
+
+
 export default function BackToTop(props) {
   const { socket, email, cp, rno, setcp, initialfetch } = props;
   const navigate = useNavigate();
-const [roompic,setroompic] = useState()
+  const [roompic, setroompic] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
 
   //const [subrecent,setsubrecent] = useState(recent2)
+   let picupload = async (e) => {
+    handleClose()
+    let files = e.target.files;
+  
+    if (files[0] !== undefined) {
+      let fdata = new FormData();
+      fdata.append("file", files[0]);
+      fdata.append("upload_preset", "nvjz6yfm");
+      let imgresult = await axios.post(
+        "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
+        fdata
+      );
+  
+      await axios.post("http://localhost:5000/roompic", {
+        url: imgresult.data.secure_url,
+        invite: cp,
+        email: email,
+      });
+      setroompic(imgresult.data.secure_url)
+    }
+  };
+
   const sendmsg = async () => {
-    let userName=localStorage.getItem(`${email}username`)
+    let userName = localStorage.getItem(`${email}username`);
     try {
       // console.log("done")
       const res = await axios.post("http://localhost:5000/post", {
-        userName:userName,
+        userName: userName,
 
         sender: email,
         msgs: msg,
-          //roomno: rno,
+        //roomno: rno,
         invitecode: cp,
         time: new Date().getTime(),
       });
       //console.log("after posting chat");
-      socket.emit("send", { msgs: msg, sender: email, invitecode: cp ,userName:userName});
+      socket.emit("send", {
+        msgs: msg,
+        sender: email,
+        invitecode: cp,
+        userName: userName,
+      });
     } catch (e) {
       console.log(e);
     }
@@ -140,6 +171,7 @@ const [roompic,setroompic] = useState()
         //console.log(recent2);
         console.log(status);
         setrecieved(status.data[0].chat);
+        setroompic(status.data[0].roompic);
       } catch (err) {
         console.log(err);
       }
@@ -171,6 +203,7 @@ const [roompic,setroompic] = useState()
   }*/
 
   let leaveRoom = async () => {
+    handleClose()
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
       invitecode: cp,
@@ -184,6 +217,7 @@ const [roompic,setroompic] = useState()
 
   let handledel = async () => {
     console.log("reached del");
+    handleClose()
     let res = "";
     try {
       res = await axios.delete("http://localhost:5000/delete", {
@@ -210,22 +244,7 @@ const [roompic,setroompic] = useState()
     setAnchorEl(null);
   };
 
-  let picupload = async (e) => {
-    
-    let files = e.target.files;
-   
-    if (files[0] !== undefined) {
-      let fdata = new FormData();
-      fdata.append("file", files[0]);
-      fdata.append("upload_preset",  "nvjz6yfm");
-      let imgresult = await axios.post(
-        "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
-        fdata
-      );
-      
-     await axios.post("http://localhost:5000/roompic",{url:imgresult.data.secure_url,invite:cp,email:email})
-    }
-  };
+
 
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
@@ -240,20 +259,36 @@ const [roompic,setroompic] = useState()
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
+            style={{marginRight:"0"}}
             onClick={() => setcp("")}
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {rno}
-          </Typography>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {rno}
-          </Typography>
-
-          <IconButton onClick={handleClick}>
-            <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
-          </IconButton>
+          <Box className="d-flex justify-content-between" style={{ flex: "1" }}>
+            <Box className="d-flex">
+              <Typography variant="h6" component="div">
+                {console.log(roompic)}
+                <img
+                  src={(roompic !== undefined )? roompic : Dummy}
+                  //alt="txt"
+                  className="dummyimg"
+                  style={{ marginTop: "0" }}
+                ></img>
+              </Typography>
+              <Typography
+                variant="h6"
+                component="div"
+                className="ScrollTop-header-roomno"
+              >
+                {rno}
+              </Typography>
+            </Box>
+            <Box>
+              <IconButton onClick={handleClick} >
+                <FontAwesomeIcon icon={faEllipsisV} ></FontAwesomeIcon>
+              </IconButton>
+            </Box>
+          </Box>
           <Popover
             id={id}
             open={open}
@@ -296,8 +331,8 @@ const [roompic,setroompic] = useState()
                       padding: 10,
                       borderRadius: 8,
                     }}
+                    className="Chatroom-chats"
                   >
-                    
                     <p>{msg.msgs}</p>
                   </div>
                 );
@@ -311,8 +346,9 @@ const [roompic,setroompic] = useState()
                       padding: 10,
                       borderRadius: 8,
                     }}
+                    className="Chatroom-chats"
                   >
-                    <p className="Scrolltop-Username">{msg.user}</p>
+                    <p className="Scrolltop-Username">{msg.userName}</p>
                     <p>{msg.msgs}</p>
                   </div>
                 );
@@ -327,6 +363,7 @@ const [roompic,setroompic] = useState()
               justifyContent: "center",
               alignItems: "center",
             }}
+            className="Chatroom-chats"
           >
             <input value={msg} onChange={setmymsg} id="inpbox"></input>
             <FontAwesomeIcon

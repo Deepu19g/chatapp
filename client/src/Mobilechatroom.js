@@ -1,7 +1,7 @@
 import { React, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./Chatroom.css";
-import AppBar from "@mui/material/AppBar";
+//import AppBar from "@mui/material/AppBar";
 import CssBaseline from "@mui/material/CssBaseline";
 //import {Popover} from 'react-bootstrap'
 import Box from "@mui/material/Box";
@@ -121,7 +121,8 @@ function Mobilechatroom({ location}) {
         });
         //.then((res) => res.data);
 
-        setrecieved(status.data);
+      
+        setrecieved(status.data[0].chat);
         setmsg("");
       } catch (err) {
         console.log(err);
@@ -162,6 +163,7 @@ function Mobilechatroom({ location}) {
                   padding: 10,
                   borderRadius: 8,
                 }}
+                className="Chatroom-chats"
               >
                 {msg.msgs}
               </div>
@@ -177,9 +179,10 @@ function Mobilechatroom({ location}) {
                   padding: 10,
                   borderRadius: 8,
                 }}
+                className="Chatroom-chats"
               >
-                 <p className="Scrolltop-Username">{msg.user}</p>
-                <p>{msg.msgs}</p>
+                 <p className="Scrolltop-Username">{msg.userName}</p>
+                <p style={{marginBottom:"0"}}>{msg.msgs}</p>
               </div>
             );
           }

@@ -11,7 +11,7 @@ function PrivateRoute() {
   }, []);
 
   const updateMedia = () => {
-    setDesktop(window.innerWidth > 576);
+    setDesktop(window.innerWidth > 600);
   };
 
   let { email } = useParams();

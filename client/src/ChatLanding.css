@@ -7,7 +7,7 @@
 #roomnames {
   padding-top: 0.5rem;
   display: "flex";
-  border-bottom: 0.1px solid;
+ /* border-bottom: 0.1px solid;*/
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
 
@@ -28,8 +28,9 @@
 }
 .dummyimg {
   height: 3rem;
+  width: 3rem;
   border-radius: 100%;
-  margin-top: 0.5rem;
+ /* margin-top: 0.5rem;*/
 }
 .dummyimgtxt {
   padding-left: 1rem;
@@ -68,6 +69,11 @@
   text-shadow: 1px 1px #fff;
  
 }
+.dp{
+  height: 3rem;
+  width: 3rem;
+  border-radius: 100%;
+}
 .custom-file-input:hover::before {
   border-color: black;
 }
@@ -79,15 +85,27 @@
 }
 
 
-@media (max-width: 805px) and (min-width: 599px) {
-  #roomnames {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+@media (max-width:805px) and (min-width:599px){
+.dummyimg{
+  height: 4rem;
+  width: 4rem;
+}
+
+ 
+}
+
+@media (max-width:400px){
+  .ChatLanding-mutedtxt{
+   font-size: 1rem;
   }
-  .dummyimgtxt {
+  
+}
+@media (max-width: 805px) and (min-width: 599px) {
+ .dummyimgtxt {
+    font-size: 1.6rem;
+  }
+  .ChatLanding-mutedtxt{
     font-size: 1.5rem;
   }
-  .dummyimg {
-    height: 5rem;
-  }
+ 
 }

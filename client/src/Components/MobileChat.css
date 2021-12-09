@@ -2,3 +2,20 @@
     padding-right: 1rem;
     padding-left: 0rem;
 }
+.dummyimg-mob{
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 100%;
+}
+
+@media (max-width:805px) and (min-width:599px){
+    .Mobchat-nav{
+        padding-top: 0.5rem ;
+        padding-bottom: 0.5rem ;
+    }
+    .dummyimg-mob{
+        height: 3.5rem;
+        width: 3.5rem;
+    }
+    
+}

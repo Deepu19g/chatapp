@@ -4,7 +4,6 @@ import {
   Routes,
   //BrowserRouter as Router,
   useNavigate,
-  
 } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
 import Dummy from "./assets/dummyimage.jpg";
@@ -30,23 +29,22 @@ function MobileLanding({ email }) {
   const [val, setval] = useState([]);
   const [recent, setrecent] = useState("");
   const [sortarr, setsortarr] = useState([]);
-  const [refresh, setrefresh] = useState("");
+
   const [invite, setinvite] = useState("");
   const socket = useRef();
-  const navigate= useNavigate();
+  const navigate = useNavigate();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
-  const [Open, setOpen] = useState(false);
+  const [Open,setOpen] = useState(false)
   const [cp, setcp] = useState("");
   const [rno, setrno] = useState("");
-  const [mode, setmode] = useState();
-  const handleClose = () => setOpen(false);
+const [eventmodprop,seteventmodprop] = useState({})
   const [anchorEl, setAnchorEl] = useState(null);
-
+ 
   let invitechange = (e) => {
     setinvite(e.target.value);
   };
-
+console.log(Open)
   useEffect(() => {
     //func to find rooms associated wuth a user
     console.log(typeof localStorage.getItem(`loggedin${email}`));
@@ -54,7 +52,7 @@ function MobileLanding({ email }) {
     if (localStorage.getItem(`loggedin${email}`) == "false") {
       console.log("reached back");
 
-     navigate(-1);
+      navigate(-1);
     } else {
       console.log("reached load fetch");
       initialfetch();
@@ -112,12 +110,12 @@ function MobileLanding({ email }) {
       if (axios.isCancel(err)) {
         console.log(err);
       } else {
-        navigate(-1)
+        navigate(-1);
       }
     }
   };
-  
-  let clickrecents = (inv,roomno) => {
+
+  let clickrecents = (inv, roomno, roompic) => {
     //setcp(e.invitecode);
     //setrno(e.roomno);
     //console.log(typeof socket.current)
@@ -135,12 +133,20 @@ function MobileLanding({ email }) {
 
     });*/
     navigate(
-       "/chats",
-     // search: '?query=abc',
-     { state: {email: email, cp: inv, rno: roomno,user:localStorage.getItem(`${email}username`)} }
-  );
+      "/chats",
+      // search: '?query=abc',
+      {
+        state: {
+          email: email,
+          cp: inv,
+          rno: roomno,
+          user: localStorage.getItem(`${email}username`),
+          roomdp: roompic,
+        },
+      }
+    );
   };
-  console.log(recent);
+  
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -148,33 +154,74 @@ function MobileLanding({ email }) {
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
 
-  let joinclick = () => {
-    setmode("join");
-    setOpen(true);
+  //props to pass to EventModal comp
 
+  let joinclick = () => {//function on clicking join btn
+    setOpen(true)
+   seteventmodprop({
+      
+      modeval: invite,
+      modefunc: submit,
+      modtxt: "Join Room",
+      setmodeval: invitechange,
+      btntxt: "Join",
+      
+     setOpen:setOpen
+      
+    });
     handleclose();
   };
   let createclick = () => {
-    setmode("create");
-    setOpen(true);
+    setOpen(true)
+    seteventmodprop({
+      //props to pass to EventModal comp
+      modeval: roomno,
+      modefunc: createRoom,
+      modtxt: "Create Room",
+      setmodeval: setroomno,
+      btntxt: "Create",
+      
+     setOpen:setOpen
+    });
+    //setOpen(true);
 
     handleclose();
   };
 
-  let eventprops = {
-    mode: mode,
-    roomno: roomno,
-    setroomno: setroomno,
-    invite: invite,
-    invitechange: invitechange,
-    initialfetch: initialfetch,
-    email: email,
-    setinvite: setinvite,
-    socket: socket,
-    Open: Open,
-    setOpen: setOpen,
-    //create:createRoom,
-    //sub:submit,
+  let createRoom = async () => {
+    try {
+      let res = await axios.post("http://localhost:5000/roomcreate", {
+        roomno: roomno,
+        members: email,
+        time: new Date().getTime(),
+      });
+
+      setOpen(false)
+      initialfetch();
+      console.log(res.data.invitecode);
+      socket.current.emit("join", { no: res.data.invitecode, email: email });
+    } catch (err) {
+      alert(err.response.data);
+    }
+  };
+
+  let submit = async () => {
+    let res = {};
+    try {
+      res = await axios.post("http://localhost:5000/roomjoin", {
+        invite: invite,
+        members: email,
+      });
+      //setrecent(res.data);
+      setOpen(false)
+      initialfetch();
+      socket.current.emit("join", { no: res.data, email: email });
+      setinvite(" ");
+      console.log(res.data);
+    } catch (err) {
+      alert(err.response.data);
+    }
+    //if such a username already exists deal with it later
   };
 
   return (
@@ -204,26 +251,37 @@ function MobileLanding({ email }) {
               </ul>
             </Typography>
           </Popover>
-          {mode !== undefined ? (
-            <EventModal {...eventprops}></EventModal>
-          ) : (
-            <Box></Box>
-          )}
+
+          <EventModal {...eventmodprop} Open={Open}></EventModal>
+
           <Box className="mob-top">
             {val.map((itm, index) => {
               return (
                 <div
                   key={index}
                   id="roomnames"
-                  onClick={() => clickrecents(itm.invitecode,itm.roomno)}
+                  onClick={() =>
+                    clickrecents(itm.invitecode, itm.roomno, itm.roompic)
+                  }
                   className="d-flex  align-items-center"
                 >
-                  <img src={Dummy} alt="img" className="dummyimg"></img>
-                  
+                  <img
+                    src={itm.roompic !== undefined ? itm.roompic : Dummy}
+                    alt="img"
+                    className="dummyimg"
+                  ></img>
+
                   <Box>
-                <p className="dummyimgtxt">{itm.roomno}</p>
-                {(itm.msgs) ? (<p className="ChatLanding-mutedtxt">{itm.user}:{itm.msgs}</p>):('')}
-                </Box>
+                    <p className="dummyimgtxt">{itm.roomno}</p>
+
+                    {itm.chat.at(-1) !== undefined ? (
+                      <p className="ChatLanding-mutedtxt">
+                        {itm.chat.at(-1).userName}:{itm.chat.at(-1).msgs}
+                      </p>
+                    ) : (
+                      ""
+                    )}
+                  </Box>
                 </div>
               );
             })}
