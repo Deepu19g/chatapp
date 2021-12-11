@@ -7,7 +7,8 @@ const mongoose = require("mongoose");
 const Chat = require("./Models/Chat");
 const User = require("./Models/User");
 const Room = require("./Models/Room");
-const AdminRoute=require("./Routes/Addadmin")
+const AdminRoute = require("./Routes/Addadmin");
+const UserRoute = require("./Routes/Userroutes");
 const { ObjectId } = require("mongodb");
 const { v1: uuidv1 } = require("uuid");
 require("dotenv").config();
@@ -47,6 +48,7 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
+app.use("/user", UserRoute);
 
 app.post("/post", (req, res) => {
   let connection = async (itm) => {
@@ -62,8 +64,7 @@ app.post("/post", (req, res) => {
       console.log(e);
     }
   };
-   connection(req.body).then(res.json("good")); 
-  
+  connection(req.body).then(res.json("good"));
 });
 
 app.post("/addmember", (req, res) => {
@@ -73,11 +74,10 @@ app.post("/addmember", (req, res) => {
     try {
       let room = await Room.find({ invitecode: invitecode }).exec();
 
-    
-      res.send({members:room[0].members})
+      res.send({ members: room[0].members });
     } catch (err) {
       console.log(err);
-      res.status(404).send("room not found")
+      res.status(404).send("room not found");
     }
   };
   addadmin();
@@ -128,8 +128,8 @@ let senddata = async (data1) => {
 
 app.post("/data", (req, res) => {
   senddata(req.body.invitecode).then((data) => {
-    console.log("mssgs")
-    console.log(data)
+    console.log("mssgs");
+    console.log(data);
     res.json(data);
   });
 });
@@ -198,8 +198,6 @@ app.post("/roomcreate", (req, res) => {
     res.send({ invitecode: itm.invitecode });
   };
   try {
-   
-
     roomdata(req.body);
   } catch (err) {
     res.status(500).send("room cant be created");
@@ -234,25 +232,22 @@ let recents = async ({ email }) => {
     let roomarray = await Room.find({ members: email });
     if (roomarray.length !== 0) {
       let roomnos = roomarray.map((itm) => itm.roomno);
-      
-      result = await Room.aggregate(
-        [
-          {
-            '$match': {
-              '$expr': {
-                '$in': [
-                  '$roomno', roomnos
-                ]
-              }
-            }
-          }, {
-            '$sort': {
-              'time': -1
-            }
-          }
-        ]
-      );
-      
+
+      result = await Room.aggregate([
+        {
+          $match: {
+            $expr: {
+              $in: ["$roomno", roomnos],
+            },
+          },
+        },
+        {
+          $sort: {
+            time: -1,
+          },
+        },
+      ]);
+
       //return lastchatarray;
       //let times = result.map((itm) => itm.lastchat);
       //let lastchatarray = await Chat.find({ time: times }).populate('roomno');
@@ -396,9 +391,8 @@ app.post("/leave", (req, res) => {
 app.delete("/delete", (req, res) => {
   let del = async () => {
     try {
-      
       let room = await Room.findOne({ invitecode: req.body.invitecode });
-     
+
       if (room.admin.includes(req.body.email)) {
         await Room.deleteOne({ invitecode: req.body.invitecode });
         await Chat.deleteOne({ invitecode: req.body.invitecode });
@@ -418,7 +412,7 @@ app.delete("/delete", (req, res) => {
 let roomid = "";
 io.on("connection", (socket) => {
   //console.log(`a user connected ${socket.id}`);
- 
+
   /*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
   const changeStream = collection.watch([]);
   changeStream.on('change', (next) => {
@@ -441,7 +435,7 @@ io.on("connection", (socket) => {
           //console.log("rarray reached")
           //console.log(roomnos)
           socket.join(roomcode);
-         // console.log("joined rooms" + JSON.stringify(roomcode));
+          // console.log("joined rooms" + JSON.stringify(roomcode));
         }
       } catch (err) {
         console.log(err);
@@ -454,7 +448,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send", (data) => {
-    
     io.in(data.invitecode).emit("text", data);
   });
 

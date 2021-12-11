@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Lpic from "../src/assets/Landingpic.png";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
+
 function Login() {
   const [password, setpassword] = useState("");
   const [email, setemail] = useState("");
@@ -37,16 +39,22 @@ function Login() {
     <Box
       sx={{ flexGrow: 1 }}
       className="page-wrapper bg-gra-01 p-t-180 p-b-100 font-poppins"
-      style={{display:"flex",flexDirection:"column",justifyContent:"center"}}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
     >
-      <Box className="wrapper wrapper--w780" style={{display:"flex", justifyContent:"center"}}>
-        <Grid container className="card card-3"  md={9} sm={9} lg={10}>
+      <Box
+        className="wrapper wrapper--w780"
+        style={{ display: "flex", justifyContent: "center" }}
+      >
+        <Grid container className="card card-3" md={9} sm={9} lg={10}>
           <Grid item className="card-heading" xs={12} sm={6}>
             <img
               className="Login-leftimg"
               //style={{ height: "100%", width: "100%", objectFit: "cover" }}
               src={Lpic}
-
             />
           </Grid>
           <Grid
@@ -64,26 +72,34 @@ function Login() {
             <h2 className="title" style={{ color: "black" }}>
               Registration Info
             </h2>
-            <form method="POST" onSubmit={logging} className="Login-form">
+            <ValidatorForm
+              method="POST"
+              onSubmit={logging}
+              className="Login-form"
+            >
               <div className="input-group">
-                <input
+                <TextValidator
                   className="input--style-3 NewLanding-input"
                   type="email"
                   placeholder="Email"
                   name="email"
                   value={email}
+                  validators={["required", "isEmail"]}
+                  errorMessages={["this field is required", "email is invalid"]}
                   onChange={(e) => setemail(e.target.value)}
                 />
               </div>
 
               <div className="input-group">
-                <input
+                <TextValidator
                   type="password"
                   placeholder="Password"
                   value={password}
+                  validators={["required"]}
+                  errorMessages={["this field is required"]}
                   className="input--style-3 NewLanding-input"
                   onChange={(e) => setpassword(e.target.value)}
-                ></input>
+                />
               </div>
 
               <div className="p-t-10">
@@ -91,7 +107,7 @@ function Login() {
                   Login
                 </button>
               </div>
-            </form>
+            </ValidatorForm>
             {warn ? <p>{warn}</p> : ""}
           </Grid>
         </Grid>

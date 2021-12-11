@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./assets/vendor/mdi-font/css/material-design-iconic-font.min.css";
@@ -9,6 +9,8 @@ import "./assets/css/main.css";
 import Lpic from "../src/assets/Landingpic.png";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
+
 function Signup() {
   const [username, setusername] = useState("");
   const [password, setpassword] = useState("");
@@ -19,6 +21,17 @@ function Signup() {
   const handlenamechange = (e) => {
     setusername(e.target.value);
   };
+  const [isDesktop, setDesktop] = useState(window.innerWidth > 576);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateMedia);
+    return () => window.removeEventListener("resize", updateMedia);
+  }, []);
+
+  const updateMedia = () => {
+    setDesktop(window.innerWidth > 600);
+  };
+
   let signup = async (e) => {
     e.preventDefault();
     console.log("working");
@@ -64,14 +77,18 @@ function Signup() {
               src={Lpic}
             />
           </Grid>
+
           <Grid
             item
-            className="card-body"
+            className={
+              isDesktop && window.innerWidth > window.innerHeight
+                ? "card-body"
+                : "Signup-card-body"
+            }
             style={{
               background: "white",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
             }}
             xs={12}
             sm={6}
@@ -79,45 +96,63 @@ function Signup() {
             <h2 className="title" style={{ color: "black" }}>
               Registration Info
             </h2>
-            <form method="POST" onSubmit={signup} className="Login-form">
-              <div className="input-group">
-                <input
-                  className="input--style-3 NewLanding-input"
+            <ValidatorForm
+              method="POST"
+              onSubmit={signup}
+              className="Login-form"
+            >
+              <Box className="input-group">
+                <TextValidator
+                  className="input--style-3 NewLanding-input "
                   type="text"
                   placeholder="Username"
                   name="name"
                   value={username}
+                  validators={["required"]}
+                  errorMessages={[
+                    "this field is required",
+                  
+                  ]}
                   onChange={handlenamechange}
                 />
-              </div>
+              </Box>
 
-              <div className="input-group">
-                <input
+              <Box className="input-group">
+                <TextValidator
                   type="password"
                   placeholder="Password"
                   value={password}
                   className="input--style-3 NewLanding-input"
+                  validators={["required"]}
+                  errorMessages={[
+                    "this field is required",
+                  
+                  ]}
                   onChange={(e) => setpassword(e.target.value)}
-                ></input>
-              </div>
-
-              <div className="input-group">
-                <input
-                  className="input--style-3 NewLanding-input"
+                />
+              </Box>
+              <Box className="input-group">
+                <TextValidator
+                  className="input--style-3 NewLanding-input "
                   type="email"
+                  onChange={(e) => setemail(e.target.value)}
                   placeholder="Email"
                   name="email"
                   value={email}
-                  onChange={(e) => setemail(e.target.value)}
+                  validators={["required", "isEmail"]}
+                  errorMessages={[
+                    "this field is required",
+                    "email is not valid",
+                  ]}
                 />
-              </div>
+              </Box>
 
               <div className="p-t-10">
                 <button type="submit" className="btn btn--pill btn--green">
                   Signup
                 </button>
               </div>
-            </form>
+            </ValidatorForm>
             {warn ? <p>{warn}</p> : ""}
           </Grid>
         </Grid>

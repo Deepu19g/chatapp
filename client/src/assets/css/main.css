@@ -122,9 +122,9 @@ button {
 /* ==========================================================================
    #PAGE WRAPPER
    ========================================================================== */
-.page-wrapper {
+/*.page-wrapper {
   min-height: 100vh;
-}
+}*/
 
 body {
   font-family: "Poppins", "Arial", "Helvetica Neue", sans-serif;
@@ -187,7 +187,10 @@ h6 {
 }
 
 
-
+.page-wrapper  {
+  height: 100%;
+    }
+    
 .p-t-20 {
   padding-top: 20px;
 }
@@ -352,12 +355,22 @@ input[type="date" i] {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.input--style-3 {
+.input-group > div{
+  width: 100%;
+}
+
+.input--style-3 > .MuiInputBase-colorPrimary{
+  border-style: none none groove;
+}
+.input--style-3 > .MuiInputBase-colorPrimary > input{
   padding: 5px 0;
   font-size: 16px;
   color: black;
   background: transparent;
-border-style: none none groove;
+
+}
+.input--style-3 > .MuiInputBase-colorPrimary > fieldset{
+  display: none;
 }
 
 .input--style-3::-webkit-input-placeholder {
@@ -477,7 +490,7 @@ border-style: none none groove;
   font-size: 1.8rem;
   color: #fff;
   font-weight: 500;
-  margin-bottom: 36px;
+   margin-bottom: 1.7rem;
 }
 
 /* ==========================================================================
@@ -518,6 +531,10 @@ border-style: none none groove;
 
   
 }
+.Signup-card-body{
+  justify-content: center;
+padding: 1.3rem;
+}
 
 
 @media (max-width: 767px) {
@@ -539,6 +556,7 @@ border-style: none none groove;
   }
   .title{
     font-size: 1.7rem;
+    
   }
 }
 
@@ -550,14 +568,19 @@ border-style: none none groove;
 
 }
 @media (max-width:599px){
-  .page-wrapper  {
-height: 100vh;
+  .Signup-card-body{
+    justify-content: initial;
+   padding: 3rem;
+   padding-top: 0;
+   padding-bottom: 0;
   }
+ 
   .wrapper{
     height: 100%;
   }
   .card{
     height: 100%;
+    overflow-y: scroll;
   }
   .card-3 .card-body{
     padding: 3rem;
@@ -565,6 +588,7 @@ height: 100vh;
   .title{
     font-size: 2.2rem;
   }
+  
 }
 @media (max-width: 500px){
   .card{
@@ -585,17 +609,20 @@ padding-top: 0;
     height: 100%;
     border-radius: 0;
   }
-  .card-heading {
+  /*.card-heading {
     height: 50%;
   }
   .card-body{
     height: 50%;
-  }
+  }*/
   .wrapper--w780{
     height: 100vh;
   }
   .title{
     font-size: 1.8rem;
+  }
+  .Signup-card-body{
+    padding-bottom: 1rem;
   }
 }
 
@@ -603,11 +630,14 @@ padding-top: 0;
 .Login-leftimg{
   height: 13rem;
 }
-.Login-form{
+/*.Login-form{
 margin-bottom: 2rem;
-}
+}*/
 .title{
   margin-bottom: 1rem;
   font-size: 1.6rem;
+}
+.page-wrapper .wrapper{
+  height: 100%;
 }
 }

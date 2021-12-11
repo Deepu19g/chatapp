@@ -1,10 +1,10 @@
-import { React, useState, useEffect } from "react";
+import { React, useState } from "react";
 import { Box } from "@mui/material";
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
 function EventModal({ modtxt, modeval, modefunc, setmodeval, btntxt,Open,setOpen }) {
-  //const [open, setopen] = useState(Open);
+  //const [open, setopen] = useStateOpen);
   
   const style = {
     position: "absolute",
