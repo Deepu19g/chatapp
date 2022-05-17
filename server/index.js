@@ -12,15 +12,8 @@ const UserRoute = require("./Routes/Userroutes");
 const { ObjectId } = require("mongodb");
 const { v1: uuidv1 } = require("uuid");
 require("dotenv").config();
-/*const http = require('http');
 
-const { Server } = require("socket.io");
-const io = new Server(server);*/
-app.use(express.json());
-
-/*const client = new MongoClient(uri);
-client.connect();*/
-mongoose.connect(process.env.URI).then(console.log("connected to db"));
+//const http = require('http');
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -29,6 +22,17 @@ const io = require("socket.io")(server, {
     methods: ["GET", "POST"],
   },
 });
+require("./Socket")(io, Room);
+
+app.use(express.json());
+
+mongoose
+  .connect(process.env.URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(console.log("connected to db"));
+
 var corsOptions = {
   origin: "http://localhost:3000",
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -128,8 +132,6 @@ let senddata = async (data1) => {
 
 app.post("/data", (req, res) => {
   senddata(req.body.invitecode).then((data) => {
-    console.log("mssgs");
-    console.log(data);
     res.json(data);
   });
 });
@@ -169,7 +171,6 @@ let login = async ({ email, password }) => {
   result = await User.find({
     email: { $eq: email },
   });
-
   if (result[0] !== undefined) {
     if (result[0].password == password) {
       return "success";
@@ -192,16 +193,19 @@ app.post("/roomcreate", (req, res) => {
   let roomdata = async (itm) => {
     itm.admin = itm.members;
     itm.invitecode = uuidv1().split("-")[0];
+    console.log(itm);
+    io.to(itm.invitecode).emit("help");
+    try {
+      let room = new Room(itm);
 
-    let room = new Room(itm);
-    await room.save();
-    res.send({ invitecode: itm.invitecode });
+      await room.save();
+
+      res.send({ invitecode: itm.invitecode, room: room });
+    } catch (err) {
+      res.status(500).send("room cant be created");
+    }
   };
-  try {
-    roomdata(req.body);
-  } catch (err) {
-    res.status(500).send("room cant be created");
-  }
+  roomdata(req.body);
 });
 
 //join a room
@@ -211,11 +215,28 @@ app.post("/roomjoin", (req, res) => {
     let room = await Room.find({ invitecode: itm.invite }).exec();
 
     if (room.length !== 0) {
+      let newData = {};
       if (room[0].members.includes(itm.members) === false) {
         room[0].members = [...room[0].members, itm.members];
+        room[0].chat = [
+          ...room[0].chat,
+          { txt: `${itm.userName} have joined group` },
+        ];
+        console.log({ invite: itm.invite });
+        io.in(itm.invite).emit("userjoin", {
+          txt: `${itm.userName} have joined group`,
+        });
         await room[0].save();
+        res.send("room joined");
+        /*let changeStream=Room.watch({ fullDocument: 'updateLookup' })
+       
+        changeStream.on('change',(next)=>{
+          console.log(next)
+          //console.log("reached next")
+          res.send(next)
+         
+        })*/
       }
-      res.send(room[0].invitecode);
     } else {
       res.status(400).send("room not found");
     }
@@ -248,15 +269,10 @@ let recents = async ({ email }) => {
         },
       ]);
 
-      //return lastchatarray;
-      //let times = result.map((itm) => itm.lastchat);
-      //let lastchatarray = await Chat.find({ time: times }).populate('roomno');
-      //let latestroom = await Room.find({ time: times });
-
-      //console.log("sortedlist" + JSON.stringify(lastchatarray));
+      
+//console.log({"msg":result})
       return result;
-      //console.log(result[1].msgs);
-      //return result;
+     
     } else {
       return [];
     }
@@ -265,87 +281,6 @@ let recents = async ({ email }) => {
   }
 };
 
-//obtaining last chat of each grp and sort  them to a array in descending order of time and send response array back
-/*let sendata = async (rno, email) => {
-  try {
-    let result = [];
-    //let result=[{time:1},{time:2},{time:3},{time:4},{time:5},{time:6}]
-
-    if (rno) {
-      for (let itm of rno) {
-        const pipeline = [
-          {
-            $match: {
-              roomno: `${itm.roomno}`,
-              time: {
-                $exists: true,
-              },
-            },
-          },
-          {
-            $sort: {
-              time: -1,
-            },
-          },
-          {
-            $limit: 1,
-          },
-        ];
-        let val = await client
-          .db("sample_airbnb")
-          .collection("ListingsAndReviews")
-          .aggregate(pipeline)
-          .toArray();
-        //
-
-        if (val[0] != null) {
-          result.push(val[0]);
-        }
-      }
-    }
-
-    let swap = (a, b) => {
-      let t = a;
-      a = b;
-      b = t;
-      return [a, b];
-    };
-    let partition = (low, high) => {
-      let pivot = result[high].time; // pivot
-      let i = low - 1; // Index of smaller element and indicates the right position of pivot found so far
-
-      for (let j = low; j <= high - 1; j++) {
-        // If current element is smaller than the pivot
-        if (result[j].time < pivot) {
-          i++; // increment index of smaller element
-          [result[i], result[j]] = swap(result[i], result[j]);
-        }
-      }
-      [result[i + 1], result[high]] = swap(result[i + 1], result[high]);
-
-      return i + 1;
-    };
-
-    let quickSort = async (low, high) => {
-      if (low < high) {
-        /* pi is partitioning index, arr[p] is now 
-    at right place 
-        let pi = partition(low, high);
-
-        // Separately sort elements before
-        // partition and after partition
-        quickSort(low, pi - 1);
-        quickSort(pi + 1, high);
-      }
-    };
-
-    await quickSort(0, result.length - 1);
-
-    return result;
-  } catch (err) {
-    console.log(err);
-  }
-};*/
 app.post("/recents", auth, (req, res) => {
   /*recents(req.body).then((data) => {
     if (data.length != 0) {
@@ -378,9 +313,18 @@ app.post("/leave", (req, res) => {
       targetRoom[0].members = targetRoom[0].members.filter(
         (itm) => itm != req.body.email
       );
+      targetRoom[0].chat = [
+        ...targetRoom[0].chat,
+        { txt: `${req.body.userName} have left group` },
+      ];
       await targetRoom[0].save();
+      io.in(req.body.invitecode).emit("leave", {
+        txt: `${req.body.userName} have left group`,
+      });
+
       res.send("good");
     } catch (err) {
+      console.log(err);
       res.send("bad");
     }
   };
@@ -395,7 +339,7 @@ app.delete("/delete", (req, res) => {
 
       if (room.admin.includes(req.body.email)) {
         await Room.deleteOne({ invitecode: req.body.invitecode });
-        await Chat.deleteOne({ invitecode: req.body.invitecode });
+
         io.to(req.body.invitecode).emit("deleted");
         res.send("room deleted");
       } else {
@@ -409,53 +353,8 @@ app.delete("/delete", (req, res) => {
 });
 
 //socket stuff
-let roomid = "";
-io.on("connection", (socket) => {
-  //console.log(`a user connected ${socket.id}`);
-
-  /*const collection = client.db("sample_airbnb").collection("ListingsAndReviews");
-  const changeStream = collection.watch([]);
-  changeStream.on('change', (next) => {
-  console.log(next)
-  //io.to(socket.id).emit("changed");
-  //socket.join(next.fullDocument.roomno)
-  //socket.to().emit("changed")
-  socket.broadcast.to(next.fullDocument.roomno).emit("changed")
-});*/
-  socket.on("initialjoin", (data) => {
-    let roomarrset = async () => {
-      try {
-        let roomarray = await Room.find({ members: data.email });
-        let roomcode = [];
-        for (obj of roomarray) {
-          roomcode = [...roomcode, obj.invitecode];
-        }
-
-        if (roomarray.length !== 0) {
-          //console.log("rarray reached")
-          //console.log(roomnos)
-          socket.join(roomcode);
-          // console.log("joined rooms" + JSON.stringify(roomcode));
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    roomarrset();
-  });
-  socket.on("join", (data) => {
-    socket.join(data.no);
-  });
-
-  socket.on("send", (data) => {
-    io.in(data.invitecode).emit("text", data);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
-});
 
 server.listen(5000, () => {
   console.log("listening on *:5000");
 });
+

@@ -74,8 +74,6 @@ Top.propTypes = {
   window: PropTypes.func,
 };
 
-
-
 export default function BackToTop(props) {
   const { socket, email, cp, rno, setcp, initialfetch } = props;
   const navigate = useNavigate();
@@ -85,10 +83,10 @@ export default function BackToTop(props) {
   const [recieved, setrecieved] = useState([]);
 
   //const [subrecent,setsubrecent] = useState(recent2)
-   let picupload = async (e) => {
-    handleClose()
+  let picupload = async (e) => {
+    handleClose();
     let files = e.target.files;
-  
+
     if (files[0] !== undefined) {
       let fdata = new FormData();
       fdata.append("file", files[0]);
@@ -97,13 +95,13 @@ export default function BackToTop(props) {
         "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
         fdata
       );
-  
+
       await axios.post("http://localhost:5000/roompic", {
         url: imgresult.data.secure_url,
         invite: cp,
         email: email,
       });
-      setroompic(imgresult.data.secure_url)
+      setroompic(imgresult.data.secure_url);
     }
   };
 
@@ -151,16 +149,26 @@ export default function BackToTop(props) {
       }
     };
     socket.on("text", roomsocket);
+    let usersocket = (data) => {
+      setrecieved((prev) => [...prev, data]);
+    };
+    socket.on("userjoin", usersocket);
+    let leave = (data) => {
+      console.log("leaving");
+      setrecieved((prev) => [...prev, data]);
+    };
+    socket.on("leave", leave);
     return () => {
       console.log("cleaned");
       socket.off("text", roomsocket);
+      socket.off("userjoin", usersocket);
+      socket.off("leave", leave);
     };
   }, [cp]);
-
+  console.log(recieved);
   useEffect(() => {
     //setsubrecent(recent2)
     let initialdata = async () => {
-      //setrecieved([]);
       console.log(cp);
       //console.log(recent2);
       try {
@@ -203,11 +211,14 @@ export default function BackToTop(props) {
   }*/
 
   let leaveRoom = async () => {
-    handleClose()
+    handleClose();
+    let userName = localStorage.getItem(`${email}username`);
     let res = await axios.post("http://localhost:5000/leave", {
       email: email,
       invitecode: cp,
+      userName: userName,
     });
+    console.log(res)
     setcp("");
     initialfetch();
   };
@@ -217,7 +228,7 @@ export default function BackToTop(props) {
 
   let handledel = async () => {
     console.log("reached del");
-    handleClose()
+    handleClose();
     let res = "";
     try {
       res = await axios.delete("http://localhost:5000/delete", {
@@ -244,14 +255,15 @@ export default function BackToTop(props) {
     setAnchorEl(null);
   };
 
-
-
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
   return (
     <Box id="msgside">
       <CssBaseline />
-      <AppBar position="sticky" style={{ backgroundColor: "#23a0e8" }}>
+      <AppBar
+        position="sticky"
+        style={{ backgroundColor: "rgb(98, 157, 252)" }}
+      >
         <Toolbar>
           <IconButton
             size="large"
@@ -259,7 +271,7 @@ export default function BackToTop(props) {
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
-            style={{marginRight:"0"}}
+            style={{ marginRight: "0" }}
             onClick={() => setcp("")}
           >
             <FontAwesomeIcon icon={faArrowLeft}></FontAwesomeIcon>
@@ -267,9 +279,8 @@ export default function BackToTop(props) {
           <Box className="d-flex justify-content-between" style={{ flex: "1" }}>
             <Box className="d-flex">
               <Typography variant="h6" component="div">
-                {console.log(roompic)}
                 <img
-                  src={(roompic !== undefined )? roompic : Dummy}
+                  src={roompic !== undefined ? roompic : Dummy}
                   //alt="txt"
                   className="dummyimg"
                   style={{ marginTop: "0" }}
@@ -284,8 +295,8 @@ export default function BackToTop(props) {
               </Typography>
             </Box>
             <Box>
-              <IconButton onClick={handleClick} >
-                <FontAwesomeIcon icon={faEllipsisV} ></FontAwesomeIcon>
+              <IconButton onClick={handleClick}>
+                <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
               </IconButton>
             </Box>
           </Box>
@@ -319,7 +330,13 @@ export default function BackToTop(props) {
         <Box sx={{ my: 2 }}>
           <Box className="d-flex flex-column chatdiv">
             {recieved.map((msg, index) => {
-              if (msg.sender === email) {
+              if (msg.txt !== undefined) {
+                return (
+                  <div>
+                    <p>{msg.txt}</p>
+                  </div>
+                );
+              } else if (msg.sender === email) {
                 return (
                   <div
                     key={index}

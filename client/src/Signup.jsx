@@ -9,6 +9,7 @@ import "./assets/css/main.css";
 import Lpic from "../src/assets/Landingpic.png";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
 
 function Signup() {
@@ -148,9 +149,9 @@ function Signup() {
               </Box>
 
               <div className="p-t-10">
-                <button type="submit" className="btn btn--pill btn--green">
+                <Button type="submit" className="btn btn--pill btn--green" variant="contained" style={{backgroundColor:"green"}}>
                   Signup
-                </button>
+                </Button>
               </div>
             </ValidatorForm>
             {warn ? <p>{warn}</p> : ""}

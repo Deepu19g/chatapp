@@ -197,9 +197,11 @@ console.log(Open)
       });
 
       setOpen(false)
-      initialfetch();
+      //socket.current.on("roomcreated",{})
       console.log(res.data.invitecode);
       socket.current.emit("join", { no: res.data.invitecode, email: email });
+      setval([res.data.room,...val])
+
     } catch (err) {
       alert(err.response.data);
     }

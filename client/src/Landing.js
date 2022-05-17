@@ -75,7 +75,7 @@ function Landing() {
           />
         </label>
 
-        <button type="submit">Signup</button>
+        <Button type="submit">Signup</Button>
 
         <Link to="/Login">
           <button type="submit">Login</button>

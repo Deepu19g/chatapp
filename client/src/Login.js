@@ -4,15 +4,23 @@ import { Link, useNavigate } from "react-router-dom";
 import Lpic from "../src/assets/Landingpic.png";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Button from '@mui/material/Button';
 import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
+import SnackBar from "./Components/SnackBar";
 
 function Login() {
   const [password, setpassword] = useState("");
   const [email, setemail] = useState("");
   const [warn, setwarn] = useState("");
-  const [auth, setauth] = useState(true);
-
+  const [auth, setauth]  = useState(true);
+  const [snackopen, setsnackOpen] = useState(false);
+  const [snacktxt,setsnacktxt] = useState()
   const navigate = useNavigate();
+
+  const handlesnack = () => {
+    setsnackOpen(true);
+  };
+
   let logging = async (e) => {
     console.log("logged");
     e.preventDefault();
@@ -28,7 +36,9 @@ function Login() {
         localStorage.setItem(`loggedin${email}`, true);
         navigate(`/ChatLanding/${email}`);
       } else {
-        setwarn(status);
+      
+       setsnacktxt(status)
+        handlesnack();
       }
     } catch (err) {
       console.log(err);
@@ -49,7 +59,7 @@ function Login() {
         className="wrapper wrapper--w780"
         style={{ display: "flex", justifyContent: "center" }}
       >
-        <Grid container className="card card-3" md={9} sm={9} lg={10}>
+        <Grid container className="card card-3 Login-centarlcard" md={9} sm={9} lg={10}>
           <Grid item className="card-heading" xs={12} sm={6}>
             <img
               className="Login-leftimg"
@@ -60,11 +70,12 @@ function Login() {
           <Grid
             item
             className="card-body"
+            // className="Signup-card-body"
             style={{
               background: "white",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
+              //justifyContent: "center",
             }}
             xs={12}
             sm={6}
@@ -77,10 +88,9 @@ function Login() {
               onSubmit={logging}
               className="Login-form"
             >
-              <div className="input-group">
+              <Box className="input-group">
                 <TextValidator
                   className="input--style-3 NewLanding-input"
-                  type="email"
                   placeholder="Email"
                   name="email"
                   value={email}
@@ -88,9 +98,9 @@ function Login() {
                   errorMessages={["this field is required", "email is invalid"]}
                   onChange={(e) => setemail(e.target.value)}
                 />
-              </div>
+              </Box>
 
-              <div className="input-group">
+              <Box className="input-group">
                 <TextValidator
                   type="password"
                   placeholder="Password"
@@ -100,15 +110,16 @@ function Login() {
                   className="input--style-3 NewLanding-input"
                   onChange={(e) => setpassword(e.target.value)}
                 />
-              </div>
+              </Box>
 
               <div className="p-t-10">
-                <button type="submit" className="btn btn--pill btn--green">
+                <Button type="submit" className="btn btn--pill btn--green">
                   Login
-                </button>
+                </Button>
               </div>
             </ValidatorForm>
-            {warn ? <p>{warn}</p> : ""}
+            {/*{warn ? <p>{warn}</p> : ""}*/}
+            <SnackBar snackopen={snackopen} setsnackOpen={setsnackOpen} snacktxt={snacktxt}></SnackBar>
           </Grid>
         </Grid>
       </Box>

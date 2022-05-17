@@ -4,7 +4,7 @@ const chatSchema = new Schema(
   {
     userName: String,
     msgs: String,
-    
+    txt:Object,
     sender: String,
     
     time: String,

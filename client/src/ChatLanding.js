@@ -14,7 +14,7 @@ import BackToTop from "./ScrollTop";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Dummy from "./assets/dummyimage.jpg";
 import EventModal from "./Components/EventModal";
-import {Image} from 'cloudinary-react';
+import { Image } from "cloudinary-react";
 
 function ChatLanding({ email }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -30,7 +30,7 @@ function ChatLanding({ email }) {
   const navigate = useNavigate();
   const CancelToken = axios.CancelToken;
   const source = CancelToken.source();
-//const [dp,setdp] = useState(" ")
+  //const [dp,setdp] = useState(" ")
   const [Open, setOpen] = useState(false);
 
   /*const roomnochange = (e) => {
@@ -50,26 +50,69 @@ function ChatLanding({ email }) {
   useEffect(() => {
     socket.current = io("ws://localhost:5000");
     socket.current.on("text", (data) => {
-      //console.log("broadcast msg receieved");
+      console.log("broadcast msg receieved");
       //setval()
       initialfetch();
     });
+    socket.current.emit("initialjoin", { email });
     socket.current.on("deleted", () => {
       console.log("deleted");
       setcp("");
       initialfetch();
     });
-    socket.current.emit("initialjoin", { email });
+    socket.current.on("leave", (data) => {
+      initialfetch();
+    });
+console.log(socket)
+   
     return () => {
       source.cancel("async func canceled");
       socket.current.close();
     };
   }, []); //TODO: reinitialize socket on user change
 
-  
+  //creating a new room
+  let createRoom = async () => {
+    try {
+      let res = await axios.post("http://localhost:5000/roomcreate", {
+        roomno: roomno,
+        members: email,
+        time: new Date().getTime(),
+      });
+
+      setOpen(false);
+      //socket.current.on("roomcreated",{})
+      console.log(res.data.invitecode);
+      socket.current.emit("join", { no: res.data.invitecode, email: email });
+      setval([res.data.room, ...val]);
+      setroomno("")
+    } catch (err) {
+      alert(err.response.data);
+    }
+  };
+  //////
+  //JOINING A ROOM
+  let joinRoom = async () => {
+    let userName = localStorage.getItem(`${email}username`);
+    try {
+      setOpen(!Open);
+      await axios.post("http://localhost:5000/roomjoin", {
+        invite: invite,
+        members: email,
+        userName: userName,
+      });
+      initialfetch();
+      socket.current.emit("join", { no: invite });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  console.log(val);
+  ///////
   let initialfetch = async () => {
+    console.log("reached chatlanf initi fecth")
     let jwtoken = localStorage.getItem(`jwt${email}`);
-console.log(jwtoken)
+    console.log(jwtoken);
     let config = {
       headers: {
         Authorization: "Bearer" + " " + jwtoken,
@@ -93,8 +136,8 @@ console.log(jwtoken)
       if (axios.isCancel(err)) {
         console.log(err);
       } else {
-        console.log(err)
-      navigate(-1);
+        console.log(err);
+        navigate(-1);
       }
       //
     }
@@ -132,7 +175,8 @@ console.log(jwtoken)
     socket: socket,
     Open: Open,
     setOpen: setOpen,
-    //create:createRoom,
+    createRoom: createRoom,
+    joinRoom: joinRoom,
     //sub:submit,
   };
   let joinclick = () => {
@@ -148,6 +192,12 @@ console.log(jwtoken)
     handleclose();
   };
 
+  let logout = ()=> {
+    navigate(-1);
+    localStorage.setItem(`loggedin${email}`,"false");
+
+  }
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={2}>
@@ -156,7 +206,7 @@ console.log(jwtoken)
           lg={3}
           md={4}
           xs={5}
-          style={{ overflowY: "scroll", minHeight: "100vh" }}
+          style={{ overflowY: "scroll", height: "100vh" }}
         >
           {/*<input
             value={invite}
@@ -191,7 +241,7 @@ console.log(jwtoken)
               <ul>
                 <p onClick={joinclick}>Join Room</p>
                 <p onClick={createclick}>Create Room</p>
-                
+                <p onClick={logout}>Logout</p>
               </ul>
             </Typography>
           </Popover>
@@ -201,7 +251,7 @@ console.log(jwtoken)
             <Box></Box>
           )}
           {val.map((itm, index) => {
-           // console.log(itm.chat.at(-1).userName)
+            // console.log(itm.chat.at(-1).userName)
             return (
               <div
                 key={index}
@@ -209,10 +259,14 @@ console.log(jwtoken)
                 onClick={() => clickrecents(itm.invitecode, itm.roomno)}
                 className="d-flex align-items-center"
               >
-                <img src={(itm.roompic!==undefined) ? itm.roompic:Dummy} alt="img" className="dummyimg"></img>
+                <img
+                  src={itm.roompic !== undefined ? itm.roompic : Dummy}
+                  alt="img"
+                  className="dummyimg"
+                ></img>
                 <Box>
                   <p className="dummyimgtxt">{itm.roomno}</p>
-                  {(itm.chat.at(-1)!==undefined )? (
+                  {itm.chat && itm.chat.at(-1) !== undefined ? (
                     <p className="ChatLanding-mutedtxt">
                       {itm.chat.at(-1).userName}:{itm.chat.at(-1).msgs}
                     </p>
