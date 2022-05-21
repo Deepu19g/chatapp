@@ -210,40 +210,7 @@ app.post("/roomcreate", (req, res) => {
 
 //join a room
 
-app.post("/roomjoin", (req, res) => {
-  let roomjoin = async (itm) => {
-    let room = await Room.find({ invitecode: itm.invite }).exec();
 
-    if (room.length !== 0) {
-      let newData = {};
-      if (room[0].members.includes(itm.members) === false) {
-        room[0].members = [...room[0].members, itm.members];
-        room[0].chat = [
-          ...room[0].chat,
-          { txt: `${itm.userName} have joined group` },
-        ];
-        console.log({ invite: itm.invite });
-        io.in(itm.invite).emit("userjoin", {
-          txt: `${itm.userName} have joined group`,
-        });
-        await room[0].save();
-        res.send("room joined");
-        /*let changeStream=Room.watch({ fullDocument: 'updateLookup' })
-       
-        changeStream.on('change',(next)=>{
-          console.log(next)
-          //console.log("reached next")
-          res.send(next)
-         
-        })*/
-      }
-    } else {
-      res.status(400).send("room not found");
-    }
-    //itm._id=temp[0]._id
-  };
-  roomjoin(req.body);
-});
 
 //fetching recent rooms and sorting them
 let recents = async ({ email }) => {

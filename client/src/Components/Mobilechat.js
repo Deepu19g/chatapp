@@ -15,7 +15,7 @@ import Fab from "@mui/material/Fab";
 import IconButton from "@mui/material/IconButton";
 import Zoom from "@mui/material/Zoom";
 import Mobilechatroom from "../Mobilechatroom";
-import AddmemModal from "./AddmemModal"
+import AddmemModal from "./AddmemModal/AddmemModal"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowAltCircleUp,
@@ -82,7 +82,8 @@ export default function Mobilechat() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [roompic, setroompic] = useState(roomdp);
   const [mode, setmode] = useState(" ");
-  const [userprop, setuserprop] = useState([]);
+ 
+  const [openAddmem,setopenAddmem] = useState(false)
   const toggle = () => setPopoverOpen(!popoverOpen);
   const handleClick2 = (event) => {
     setAnchorEl(event.currentTarget);
@@ -147,13 +148,8 @@ export default function Mobilechat() {
   };
 
   let addmember = async () => {
-    try {
-      let res = await axios.get("http://localhost:5000/user/userlist");
-      console.log(res);
-      setuserprop(res.data.users);
-    } catch (err) {
-      console.log(err);
-    }
+    setopenAddmem(true)
+    
   };
   return (
     <React.Fragment>
@@ -228,7 +224,8 @@ export default function Mobilechat() {
         </Toolbar>
       </AppBar>
       <Toolbar id="back-to-top-anchor" />
-     <AddmemModal userprop={userprop} Open={true}></AddmemModal>
+    
+      <AddmemModal  Open={openAddmem} setopenAddmem={setopenAddmem} rno={rno} invitecode={cp}></AddmemModal>
       <Container>
         <Box sx={{ my: 2 }}>
           <Mobilechatroom location={location}></Mobilechatroom>

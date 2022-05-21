@@ -37,7 +37,9 @@
     font-size: 0.9rem;
 }
 .ScrollTop-header-roomno{
-  margin-left: 0.5rem !important
+  margin-left: 0.5rem !important;
+  display: flex;
+  align-items: center;
 }
 @media (max-width: 576px) {
   #senddiv {
@@ -49,24 +51,24 @@
 @media (max-width:805px) and (min-width:599px){
   
   .sendbtn{
-    font-size: 2.5rem
+    font-size: 1.7rem
   }
   .Mobchatroom-msgs{
     font-size: 1.5rem;
   }
-  .Chatroom-chats{
+  /*.Chatroom-chats{
     font-size: 1.5rem ;
-  }
+  }*/
   .ScrollTop-header-roomno{
-    font-size: 2rem !important;
+    font-size: 1.3rem !important;
   }
   .chatdiv{
     margin-top: 2.5rem;
     padding-bottom: 3.5rem;
   }
-  #inpbox{
+ /* #inpbox{
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     font-size: 1.5rem
-  }
+  }*/
 }

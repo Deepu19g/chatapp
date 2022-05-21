@@ -86,10 +86,10 @@
 
 
 @media (max-width:805px) and (min-width:599px){
-.dummyimg{
+/*.dummyimg{
   height: 4rem;
   width: 4rem;
-}
+}*/
 
  
 }
@@ -101,11 +101,11 @@
   
 }
 @media (max-width: 805px) and (min-width: 599px) {
- .dummyimgtxt {
+ /*.dummyimgtxt {
     font-size: 1.6rem;
   }
   .ChatLanding-mutedtxt{
     font-size: 1.5rem;
-  }
+  }*/
  
 }
