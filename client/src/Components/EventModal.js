@@ -11,11 +11,13 @@ import SendIcon from "@mui/icons-material/Send";
 function EventModal({
   roomno,setroomno,setinvite,invite,
   mode,
- createRoom,
+  val,setval,
   btntxt,
   Open,
   setOpen,
-  email,joinRoom
+  email,
+  initialfetch,
+  socket
 }) {
   //const [open, setopen] = useStateOpen);
 
@@ -31,6 +33,42 @@ function EventModal({
     p: 4,
   };
   console.log(Open);
+
+  let joinRoom = async () => {
+    let userName = localStorage.getItem(`${email}username`);
+    try {
+      setOpen(!Open);
+      await axios.post("http://localhost:5000/room/roomjoin", {
+        invite: invite,
+        members: [email],
+        userName: userName,
+      });
+      initialfetch();
+      socket.current.emit("join", { no: invite });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  let createRoom = async () => {
+    try {
+      let res = await axios.post("http://localhost:5000/room/roomcreate", {
+        roomno: roomno,
+        members: email,
+        time: new Date().getTime(),
+      });
+
+      setOpen(false);
+      //socket.current.on("roomcreated",{})
+      console.log(res.data.invitecode);
+      socket.current.emit("join", { no: res.data.invitecode, email: email });
+      setval([res.data.room, ...val]);
+      setroomno("");
+    } catch (err) {
+      alert(err.response);
+    }
+  }
+
   return (
     <Box>
       <Modal

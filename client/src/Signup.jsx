@@ -11,6 +11,7 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
+import SnackBar from "./Components/SnackBar";
 
 function Signup() {
   const [username, setusername] = useState("");
@@ -23,6 +24,8 @@ function Signup() {
     setusername(e.target.value);
   };
   const [isDesktop, setDesktop] = useState(window.innerWidth > 576);
+  const [snackopen, setsnackOpen] = useState(false);
+  const [snacktxt,setsnacktxt] = useState()
 
   useEffect(() => {
     window.addEventListener("resize", updateMedia);
@@ -33,11 +36,15 @@ function Signup() {
     setDesktop(window.innerWidth > 600);
   };
 
+  const handlesnack = () => {
+    setsnackOpen(true);
+  };
+
   let signup = async (e) => {
     e.preventDefault();
     console.log("working");
     try {
-      const res = await axios.post("http://localhost:5000/signup", {
+      const res = await axios.post("http://localhost:5000/user/signup", {
         username: username,
         password: password,
         email: email,
@@ -51,9 +58,11 @@ function Signup() {
       navigate(`/ChatLanding/${email}`);
 
       //setstatus(true)
-    } catch (err) {
-      setwarn(true);
-      console.log(err);
+    } catch ({response}) {
+      //setwarn(true);
+     
+      setsnacktxt(response.data.msg)
+      handlesnack();
     }
   };
   return (
@@ -154,7 +163,7 @@ function Signup() {
                 </Button>
               </div>
             </ValidatorForm>
-            {warn ? <p>{warn}</p> : ""}
+            <SnackBar snackopen={snackopen} setsnackOpen={setsnackOpen} snacktxt={snacktxt}></SnackBar>
           </Grid>
         </Grid>
       </Box>

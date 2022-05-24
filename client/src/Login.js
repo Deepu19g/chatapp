@@ -26,7 +26,7 @@ function Login() {
     e.preventDefault();
     try {
       let status = await axios
-        .post("http://localhost:5000/login", {
+        .post("http://localhost:5000/user/login", {
           password: password,
           email: email,
         })

@@ -33,7 +33,7 @@ function Mobilechatroom({ location}) {
   const sendmsg = async () => {
     try {
       // console.log("done")
-      const res = await axios.post("http://localhost:5000/post", {
+      const res = await axios.post("http://localhost:5000/chat/post", {
         user:user,
         sender: email,
         msgs: msg,
@@ -76,7 +76,7 @@ function Mobilechatroom({ location}) {
   let handledel = async () => {
     let res = "";
     try {
-      res = await axios.delete("http://localhost:5000/delete", {
+      res = await axios.delete("http://localhost:5000/room/delete", {
         data: {
           invitecode: cp,
           email: email,
@@ -116,7 +116,7 @@ function Mobilechatroom({ location}) {
 
       //console.log(recent2);
       try {
-        let status = await axios.post("http://localhost:5000/data", {
+        let status = await axios.post("http://localhost:5000/chat/data", {
           invitecode: cp,
         });
         //.then((res) => res.data);
@@ -133,7 +133,7 @@ function Mobilechatroom({ location}) {
   }, [cp]);
 
   let leaveRoom = async () => {
-    let res = await axios.post("http://localhost:5000/leave", {
+    let res = await axios.post("http://localhost:5000/room/leave", {
       email: email,
       invitecode: cp,
     });
@@ -154,7 +154,7 @@ function Mobilechatroom({ location}) {
             return (
               <div
                 key={index}
-                className="Mobchatroom-msgs"
+                className="Mobchatroom-msgs Chatroom-chats"
                 style={{
                   alignSelf: "flex-end",
                   //backgroundColor: "#931bf5",
@@ -163,7 +163,7 @@ function Mobilechatroom({ location}) {
                   padding: 10,
                   borderRadius: 8,
                 }}
-                className="Chatroom-chats"
+                
               >
                 {msg.msgs}
               </div>
@@ -172,14 +172,14 @@ function Mobilechatroom({ location}) {
             return (
               <div
                 key={index}
-                className="Mobchatroom-msgs"
+                className="Mobchatroom-msgs Chatroom-chats"
                 style={{
                   alignSelf: "flex-start",
                   backgroundColor: "#f3f0f5",
                   padding: 10,
                   borderRadius: 8,
                 }}
-                className="Chatroom-chats"
+                
               >
                  <p className="Scrolltop-Username">{msg.userName}</p>
                 <p style={{marginBottom:"0"}}>{msg.msgs}</p>

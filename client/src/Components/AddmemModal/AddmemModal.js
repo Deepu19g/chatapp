@@ -26,6 +26,7 @@ export default function AddmemModal({ Open, setopenAddmem, rno,invitecode }) {
 
   const [checked, setchecked] = useState([]);
   const handleClose = () => setopenAddmem(false);
+  const [usersubmit,setusersubmit] = useState(false)
   useEffect(() => {
     try {
       axios.post("http://localhost:5000/user/userlist",{
@@ -38,13 +39,13 @@ export default function AddmemModal({ Open, setopenAddmem, rno,invitecode }) {
     } catch (err) {
       console.log(err);
     }
-  }, []);
+  }, [usersubmit]);
   
 
   let addusertoroom = async (submittedusers) => {
     //works when user selects a username to add to room
     try {
-      axios.post("http://localhost:5000/user/roomjoin", {
+      axios.post("http://localhost:5000/room/roomjoin", {
        members: submittedusers,
         invite: invitecode,
       });
@@ -62,9 +63,10 @@ export default function AddmemModal({ Open, setopenAddmem, rno,invitecode }) {
     let submittedusers=[]
     checked.map((itm, i) => {
       if (itm == true) {
-        submittedusers=[...submittedusers,userdata[i]]
+        submittedusers=[...submittedusers,userdata[i].email]
       }
     });
+    setusersubmit(true)
     addusertoroom(submittedusers)
     
   };
@@ -86,7 +88,7 @@ export default function AddmemModal({ Open, setopenAddmem, rno,invitecode }) {
                   className="AddmemModal-subdiv d-flex justify-content-between align-items-center"
                   onClick={() => setusername(itm)}
                 >
-                  {itm.length >15 ? itm.substr(0,15)+"...":itm}
+                  {itm.username.length >15 ? itm.username.substr(0,15)+"...":itm.username}
                   <Checkbox
                     checked={checked[index]}
                     onChange={() => handleCheck(index)}

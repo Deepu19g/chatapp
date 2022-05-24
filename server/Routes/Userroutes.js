@@ -1,69 +1,94 @@
 var express = require("express");
 var router = express.Router();
-const User = require("../Models/User")
-const Room=require("../Models/Room")
-router.post("/userlist",(req,res)=>{
-    let getuserlist=async()=>{
-        let roomusers
-       await  Room.find({ invitecode: req.body.invite }).exec().then(qresult=>{
-            roomusers=qresult[0].members
-           
+const User = require("../Models/User");
+const Room = require("../Models/Room");
+const jwt = require("jsonwebtoken");
+const app = express();
+const http = require("http");
+
+const server = http.createServer(app);
+
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+router.post("/userlist", (req, res) => {
+  let getuserlist = async () => {
+    let roomusers;
+    await Room.find({ invitecode: req.body.invite })
+      .exec()
+      .then((qresult) => {
+        roomusers = qresult[0]?.members;
+      });
+    console.log(roomusers);
+    await User.find()
+      .exec()
+      .then((qresult) => {
+        console.log(qresult.map((it) => it.email));
+        //let result=qresult.map(itm=>itm.email)
+
+        let remainingusers = qresult.filter((itm) => {
+          if (roomusers?.includes(itm.email) == false) {
+            return itm;
+          }
         });
-       
-        User.find().exec().then(qresult=>{
-           
-            //let result=qresult.map(itm=>itm.email)
-           
-            let remainingusers=qresult.filter(itm=>{
-                
-                if(roomusers.includes(itm.email)==false){
-                   return itm
-                }
-            })
-            let userlist=remainingusers.map(itm=>itm.username)
-            res.send({"userlist":userlist})
-        });
-        
-    }
-    getuserlist()
-    
-})
+        // let userlist=remainingusers.map(itm=>itm.username)
+        res.send({ userlist: remainingusers });
+      });
+  };
+  getuserlist();
+});
 
-
-
-router.post("/roomjoin", (req, res) => {
-    let roomjoin = async (itm) => {
-      let room = await Room.find({ invitecode: itm.invite }).exec();
-  
-      if (room.length !== 0) {
-        let newData = {};
-        if (room[0].members.includes(itm.members) === false) {
-          room[0].members = [...room[0].members, ...itm.members];
-          room[0].chat = [
-            ...room[0].chat,
-            { txt: `${itm.userName} have joined group` },
-          ];
-          console.log({ invite: itm.invite });
-          io.in(itm.invite).emit("userjoin", {
-            txt: `${itm.userName} have joined group`,
-          });
-          await room[0].save();
-          res.send("room joined");
-          /*let changeStream=Room.watch({ fullDocument: 'updateLookup' })
-         
-          changeStream.on('change',(next)=>{
-            console.log(next)
-            //console.log("reached next")
-            res.send(next)
-           
-          })*/
-        }
+router.post("/login", (req, res) => {
+  //login authentication
+  let login = async ({ email, password }) => {
+    let result = [];
+    //console.log("reached login")
+    result = await User.find({
+      email: { $eq: email },
+    });
+    if (result[0] !== undefined) {
+      if (result[0].password == password) {
+        return "success";
       } else {
-        res.status(400).send("room not found");
+        return "incorrect username or password";
       }
-      //itm._id=temp[0]._id
-    };
-    roomjoin(req.body);
+    } else {
+      return "user not registered";
+    }
+  };
+  login(req.body, res).then((data) => {
+    res.json(data);
   });
+});
 
-module.exports=router
+router.post("/signup", (req, res) => {
+  //user signup
+  let signup = async (data, res) => {
+    try {
+      /*let result=await client
+    .db("sample_airbnb")
+    .collection("ListingsAndReviews").findOne({email:{ $eq: data.email }})*/
+
+      let result = await User.find({ email: { $eq: data.email } }).exec();
+
+      if (result.length == 0) {
+        const user = new User(data);
+        await user.save();
+
+        const accToken = jwt.sign(data, process.env.SECRETKEY);
+        res.send(accToken);
+      } else {
+        res.status(403).json({ msg: "user already exists" });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  signup(req.body, res);
+});
+
+module.exports = router;

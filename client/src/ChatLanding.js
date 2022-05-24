@@ -15,6 +15,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Dummy from "./assets/dummyimage.jpg";
 import EventModal from "./Components/EventModal";
 import { Image } from "cloudinary-react";
+import LandingPopup from "./Components/LandingPopup";
 
 function ChatLanding({ email }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -63,8 +64,8 @@ function ChatLanding({ email }) {
     socket.current.on("leave", (data) => {
       initialfetch();
     });
-console.log(socket)
-   
+    console.log(socket);
+
     return () => {
       source.cancel("async func canceled");
       socket.current.close();
@@ -72,7 +73,7 @@ console.log(socket)
   }, []); //TODO: reinitialize socket on user change
 
   //creating a new room
-  let createRoom = async () => {
+  /*let createRoom = async () => {
     try {
       let res = await axios.post("http://localhost:5000/roomcreate", {
         roomno: roomno,
@@ -85,14 +86,14 @@ console.log(socket)
       console.log(res.data.invitecode);
       socket.current.emit("join", { no: res.data.invitecode, email: email });
       setval([res.data.room, ...val]);
-      setroomno("")
+      setroomno("");
     } catch (err) {
       alert(err.response.data);
     }
-  };
+  };*/
   //////
   //JOINING A ROOM
-  let joinRoom = async () => {
+  /*let joinRoom = async () => {
     let userName = localStorage.getItem(`${email}username`);
     try {
       setOpen(!Open);
@@ -107,10 +108,10 @@ console.log(socket)
       console.log(err);
     }
   };
-  console.log(val);
+  console.log(val);*/
   ///////
   let initialfetch = async () => {
-    console.log("reached chatlanf initi fecth")
+    console.log("reached chatlanf initi fecth");
     let jwtoken = localStorage.getItem(`jwt${email}`);
     console.log(jwtoken);
     let config = {
@@ -122,7 +123,7 @@ console.log(socket)
     try {
       let res = await axios
         .post(
-          "http://localhost:5000/recents",
+          "http://localhost:5000/room/recents",
           {
             email: email,
           },
@@ -175,8 +176,10 @@ console.log(socket)
     socket: socket,
     Open: Open,
     setOpen: setOpen,
-    createRoom: createRoom,
-    joinRoom: joinRoom,
+    val:val,
+    setval:setval
+    //createRoom: createRoom,
+   // joinRoom: joinRoom,
     //sub:submit,
   };
   let joinclick = () => {
@@ -192,11 +195,14 @@ console.log(socket)
     handleclose();
   };
 
-  let logout = ()=> {
-    navigate(-1);
-    localStorage.setItem(`loggedin${email}`,"false");
-
-  }
+  let propLandingPopup = {
+    email: email,
+    navigate: navigate,
+    setAnchorEl: setAnchorEl,
+    setOpen: setOpen,
+    anchorEl: anchorEl,
+    setmode:setmode,
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -226,25 +232,7 @@ console.log(socket)
               <FontAwesomeIcon icon={faEllipsisV}></FontAwesomeIcon>
             </IconButton>
           </Box>
-          <Popover
-            id={id}
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handleclose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-          >
-            <Typography sx={{ p: 2 }} component={"div"}>
-              {" "}
-              <ul>
-                <p onClick={joinclick}>Join Room</p>
-                <p onClick={createclick}>Create Room</p>
-                <p onClick={logout}>Logout</p>
-              </ul>
-            </Typography>
-          </Popover>
+          <LandingPopup {...propLandingPopup}></LandingPopup>
           {mode !== undefined ? (
             <EventModal {...eventprops}></EventModal>
           ) : (
@@ -283,7 +271,11 @@ console.log(socket)
           lg={9}
           md={8}
           xs={7}
-          style={{ paddingLeft: "0", overflowY: "scroll" }}
+          style={{
+            paddingLeft: "0",
+            overflowY: "scroll",
+            borderLeft: "1px solid",
+          }}
         >
           {cp !== "" && (
             <BackToTop

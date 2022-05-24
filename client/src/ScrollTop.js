@@ -3,7 +3,7 @@ import axios from "axios";
 import "./Chatroom.css";
 import Popover from "@mui/material/Popover";
 //import Dummy from "./assets/dummyimage.jpg";
-import Dummy from "./assets/dummyimage.jpg";
+
 import PropTypes from "prop-types";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -26,6 +26,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 //import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Zoom from "@mui/material/Zoom";
+import RoomNav from "./Components/RoomNav";
 
 export function Top(props) {
   const { children, window } = props;
@@ -77,39 +78,21 @@ Top.propTypes = {
 export default function BackToTop(props) {
   const { socket, email, cp, rno, setcp, initialfetch } = props;
   const navigate = useNavigate();
-  const [roompic, setroompic] = useState("");
+  const [roompic, setroompic] = useState(undefined);
   const [anchorEl, setAnchorEl] = useState(null);
   const [msg, setmsg] = useState("");
   const [recieved, setrecieved] = useState([]);
+  
+  const [openAddmem, setopenAddmem] = useState(false);
 
   //const [subrecent,setsubrecent] = useState(recent2)
-  let picupload = async (e) => {
-    handleClose();
-    let files = e.target.files;
-
-    if (files[0] !== undefined) {
-      let fdata = new FormData();
-      fdata.append("file", files[0]);
-      fdata.append("upload_preset", "nvjz6yfm");
-      let imgresult = await axios.post(
-        "https://api.cloudinary.com/v1_1/dlosbkrhb/image/upload",
-        fdata
-      );
-
-      await axios.post("http://localhost:5000/roompic", {
-        url: imgresult.data.secure_url,
-        invite: cp,
-        email: email,
-      });
-      setroompic(imgresult.data.secure_url);
-    }
-  };
+  
 
   const sendmsg = async () => {
     let userName = localStorage.getItem(`${email}username`);
     try {
       // console.log("done")
-      const res = await axios.post("http://localhost:5000/post", {
+      const res = await axios.post("http://localhost:5000/chat/post", {
         userName: userName,
 
         sender: email,
@@ -172,7 +155,7 @@ export default function BackToTop(props) {
       console.log(cp);
       //console.log(recent2);
       try {
-        let status = await axios.post("http://localhost:5000/data", {
+        let status = await axios.post("http://localhost:5000/chat/data", {
           invitecode: cp,
         });
         //.then((res) => res.data);
@@ -213,7 +196,7 @@ export default function BackToTop(props) {
   let leaveRoom = async () => {
     handleClose();
     let userName = localStorage.getItem(`${email}username`);
-    let res = await axios.post("http://localhost:5000/leave", {
+    let res = await axios.post("http://localhost:5000/room/leave", {
       email: email,
       invitecode: cp,
       userName: userName,
@@ -231,7 +214,7 @@ export default function BackToTop(props) {
     handleClose();
     let res = "";
     try {
-      res = await axios.delete("http://localhost:5000/delete", {
+      res = await axios.delete("http://localhost:5000/room/delete", {
         data: {
           invitecode: cp,
           email: email,
@@ -257,9 +240,26 @@ export default function BackToTop(props) {
 
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
+
+  let propRoomNav={
+    id:id,
+    open:open,
+    anchorEl:anchorEl,
+    handleClose:handleClose,
+    navigate:navigate,
+    roomdp:roompic,
+    cp:cp,
+    email:email,
+    setopenAddmem:setopenAddmem,
+    rno:rno,
+    handleClick2:handleClick,
+    openAddmem:openAddmem,
+    setcp:setcp
+  }
   return (
     <Box id="msgside">
-      <CssBaseline />
+      <RoomNav {...propRoomNav}></RoomNav>
+      {/*<CssBaseline />
       <AppBar
         position="sticky"
         style={{ backgroundColor: "rgb(98, 157, 252)" }}
@@ -325,7 +325,7 @@ export default function BackToTop(props) {
           </Popover>
         </Toolbar>
       </AppBar>
-      <Toolbar id="back-to-top-anchor" />
+      <Toolbar id="back-to-top-anchor" />*/}
       <Container>
         <Box sx={{ my: 2 }}>
           <Box className="d-flex flex-column chatdiv">
